@@ -11,4 +11,5 @@ public interface PaymentDAO {
     List<Payment> getByEnrollment(int enrollmentId) throws Exception;
     List<Payment> search(String keyword) throws Exception;
     double getTotalPaid(int enrollmentId) throws Exception;
+    List<Payment> getByStudentId(String studentId) throws Exception;
 }

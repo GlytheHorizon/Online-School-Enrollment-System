@@ -73,6 +73,14 @@ public class PaymentController {
         }
     }
 
+    public List<Payment> getAllPaymentsByStudent(String studentId) {
+        try {
+            return paymentDAO.getByStudentId(studentId);
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
     public void searchPayments(JTable table, String keyword) {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);

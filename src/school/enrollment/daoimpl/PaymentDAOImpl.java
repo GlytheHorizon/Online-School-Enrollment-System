@@ -126,6 +126,25 @@ public class PaymentDAOImpl implements PaymentDAO {
         return 0;
     }
 
+    @Override
+    public List<Payment> getByStudentId(String studentId) throws Exception {
+        List<Payment> list = new ArrayList<>();
+        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name " +
+                     "FROM payments p " +
+                     "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
+                     "JOIN students s ON e.student_id = s.student_id " +
+                     "JOIN courses c ON e.course_id = c.course_id " +
+                     "WHERE e.student_id = ? ORDER BY p.payment_date DESC";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapPayment(rs));
+            }
+        }
+        return list;
+    }
+
     private Payment mapPayment(ResultSet rs) throws SQLException {
         Payment p = new Payment();
         p.setPaymentId(rs.getInt("payment_id"));

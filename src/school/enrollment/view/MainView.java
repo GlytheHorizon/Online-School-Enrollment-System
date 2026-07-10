@@ -9,30 +9,41 @@ public class MainView extends JFrame {
     private CourseView courseView;
     private EnrollmentView enrollmentView;
     private PaymentView paymentView;
+    private InfoView infoView;
 
     public MainView() {
         setTitle("Online School Enrollment System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1100, 750);
+        setSize(1150, 780);
         setLocationRelativeTo(null);
+        setIconImage(null);
+
+        try {
+            UIManager.put("TabbedPane.font", new Font("Segoe UI", Font.BOLD, 13));
+            UIManager.put("TabbedPane.selected", new Color(41, 128, 185));
+            UIManager.put("TabbedPane.contentAreaColor", new Color(245, 246, 250));
+        } catch (Exception e) { /* ignore */ }
 
         initComponents();
-
         setVisible(true);
     }
 
     private void initComponents() {
         JTabbedPane tabs = new JTabbedPane();
+        tabs.setBackground(new Color(236, 240, 241));
+        tabs.setBorder(BorderFactory.createEmptyBorder(2, 2, 0, 2));
 
         registrationView = new RegistrationView();
         courseView = new CourseView();
         enrollmentView = new EnrollmentView();
         paymentView = new PaymentView();
+        infoView = new InfoView();
 
-        tabs.addTab("Student Registration", new ImageIcon(), registrationView, "Register and manage students");
-        tabs.addTab("Course Management", new ImageIcon(), courseView, "Add and manage courses");
-        tabs.addTab("Enrollment", new ImageIcon(), enrollmentView, "Enroll students in courses");
-        tabs.addTab("Tuition Payment", new ImageIcon(), paymentView, "Process tuition payments");
+        tabs.addTab("  Student Registration  ", registrationView);
+        tabs.addTab("  Course Management  ", courseView);
+        tabs.addTab("  Enrollment  ", enrollmentView);
+        tabs.addTab("  Tuition Payment  ", paymentView);
+        tabs.addTab("  Info  ", infoView);
 
         tabs.addChangeListener((ChangeEvent e) -> {
             int idx = tabs.getSelectedIndex();
@@ -42,17 +53,18 @@ public class MainView extends JFrame {
             } else if (idx == 3) {
                 paymentView.loadStudentCombo();
                 paymentView.loadStudentEnrollments();
+                paymentView.loadPaymentHistory();
             }
         });
 
-        tabs.setFont(tabs.getFont().deriveFont(Font.BOLD, 14f));
-        tabs.setTabPlacement(JTabbedPane.TOP);
-
         add(tabs, BorderLayout.CENTER);
 
-        JPanel statusBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        statusBar.setBorder(BorderFactory.createEtchedBorder());
-        statusBar.add(new JLabel("Online School Enrollment System v1.0 | MVC + DAO Architecture"));
+        JPanel statusBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 3));
+        statusBar.setBackground(UIHelper.HEADER_BG);
+        JLabel statusLabel = new JLabel("  Online School Enrollment System v1.0  |  MVC + DAO Architecture  |  Group 2");
+        statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        statusLabel.setForeground(UIHelper.HEADER_FG);
+        statusBar.add(statusLabel);
         add(statusBar, BorderLayout.SOUTH);
     }
 }

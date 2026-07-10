@@ -11,4 +11,5 @@ public interface EnrollmentDAO {
     List<Enrollment> getByStudent(String studentId) throws Exception;
     List<Enrollment> getByCourse(int courseId) throws Exception;
     List<Enrollment> search(String keyword) throws Exception;
+    boolean exists(String studentId, int courseId) throws Exception;
 }

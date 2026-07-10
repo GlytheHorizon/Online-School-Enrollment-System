@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS school_enrollment;
 USE school_enrollment;
 
 CREATE TABLE IF NOT EXISTS students (
-    student_id VARCHAR(9) PRIMARY KEY,
+    student_id VARCHAR(20) PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS courses (
 
 CREATE TABLE IF NOT EXISTS enrollments (
     enrollment_id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id VARCHAR(9) NOT NULL,
+    student_id VARCHAR(20) NOT NULL,
     course_id INT NOT NULL,
     enrollment_date DATE DEFAULT (CURDATE()),
     status VARCHAR(20) DEFAULT 'Enrolled',

@@ -25,6 +25,10 @@ public class EnrollmentController {
             return;
         }
         try {
+            if (enrollmentDAO.exists(studentId, courseId)) {
+                JOptionPane.showMessageDialog(null, "This student is already enrolled in that course.", "Duplicate Enrollment", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             Enrollment e = new Enrollment();
             e.setStudentId(studentId);
             e.setCourseId(courseId);

@@ -126,6 +126,19 @@ public class EnrollmentDAOImpl implements EnrollmentDAO {
         return list;
     }
 
+    @Override
+    public boolean exists(String studentId, int courseId) throws Exception {
+        String sql = "SELECT COUNT(*) FROM enrollments WHERE student_id=? AND course_id=? AND status='Enrolled'";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, studentId);
+            ps.setInt(2, courseId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
     private Enrollment mapEnrollment(ResultSet rs) throws SQLException {
         Enrollment e = new Enrollment();
         e.setEnrollmentId(rs.getInt("enrollment_id"));
