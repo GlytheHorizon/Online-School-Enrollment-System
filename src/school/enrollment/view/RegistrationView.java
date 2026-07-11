@@ -51,10 +51,12 @@ public class RegistrationView extends JPanel {
         txtLastName = new JTextField(20);
         txtEmail = new JTextField(20);
         txtPhone = new JTextField(20);
-        txtAddress = new JTextArea(3, 20);
+        txtAddress = new JTextArea(2, 20);
         txtAddress.setLineWrap(true);
         for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone})
             UIHelper.styleField(f);
+        txtAddress.setFont(UIHelper.MAIN_FONT);
+
         ((PlainDocument) txtPhone.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
             public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
@@ -75,7 +77,6 @@ public class RegistrationView extends JPanel {
                 fb.replace(0, cur.length(), ns, null);
             }
         });
-        txtAddress.setFont(UIHelper.MAIN_FONT);
 
         ((PlainDocument) txtStudentId.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
             public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
@@ -104,40 +105,54 @@ public class RegistrationView extends JPanel {
             }
         });
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.EAST;
-        JLabel l1 = new JLabel("Student ID* (XXXX-XXXX):");
-        UIHelper.styleLabel(l1); fields.add(l1, gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
+        // Row 1: Student ID, First Name, Last Name
+        JLabel l1 = new JLabel("Student ID*:");
+        UIHelper.styleLabel(l1);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
+        fields.add(l1, gbc);
+        gbc.gridx = 1; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
+        UIHelper.setPlaceholder(txtStudentId, "2024-0001");
         fields.add(txtStudentId, gbc);
 
-        gbc.gridx = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
         JLabel l2 = new JLabel("First Name*:");
-        UIHelper.styleLabel(l2); fields.add(l2, gbc);
-        gbc.gridx = 3; gbc.weightx = 1;
+        UIHelper.styleLabel(l2);
+        gbc.gridx = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
+        fields.add(l2, gbc);
+        gbc.gridx = 3; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
+        UIHelper.setPlaceholder(txtFirstName, "e.g., Juan");
         fields.add(txtFirstName, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
         JLabel l3 = new JLabel("Last Name*:");
-        UIHelper.styleLabel(l3); fields.add(l3, gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
+        UIHelper.styleLabel(l3);
+        gbc.gridx = 4; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
+        fields.add(l3, gbc);
+        gbc.gridx = 5; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
+        UIHelper.setPlaceholder(txtLastName, "e.g., Dela Cruz");
         fields.add(txtLastName, gbc);
 
-        gbc.gridx = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
+        // Row 2: Email, Phone, Address
         JLabel l4 = new JLabel("Email*:");
-        UIHelper.styleLabel(l4); fields.add(l4, gbc);
-        gbc.gridx = 3; gbc.weightx = 1;
+        UIHelper.styleLabel(l4);
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
+        fields.add(l4, gbc);
+        gbc.gridx = 1; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
+        UIHelper.setPlaceholder(txtEmail, "email@example.com");
         fields.add(txtEmail, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
         JLabel l5 = new JLabel("Phone:");
-        UIHelper.styleLabel(l5); fields.add(l5, gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
+        UIHelper.styleLabel(l5);
+        gbc.gridx = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
+        fields.add(l5, gbc);
+        gbc.gridx = 3; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
+        UIHelper.setPlaceholder(txtPhone, "09XXXXXXXXX");
         fields.add(txtPhone, gbc);
 
-        gbc.gridx = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.NORTHEAST;
+        gbc.gridx = 4; gbc.weightx = 0; gbc.anchor = GridBagConstraints.NORTHEAST;
         JLabel l6 = new JLabel("Address:");
-        UIHelper.styleLabel(l6); fields.add(l6, gbc);
-        gbc.gridx = 3; gbc.weightx = 1;
+        UIHelper.styleLabel(l6);
+        fields.add(l6, gbc);
+        gbc.gridx = 5; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
+        UIHelper.setPlaceholder(txtAddress, "Street, City, Province");
         fields.add(new JScrollPane(txtAddress), gbc);
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
@@ -193,12 +208,14 @@ public class RegistrationView extends JPanel {
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         UIHelper.stylePanel(btnPanel);
-        JButton btnSearch = UIHelper.createButton("Search", UIHelper.ACCENT);
         JButton btnRefresh = UIHelper.createButton("Refresh", UIHelper.ACCENT);
-        btnSearch.addActionListener(e -> controller.searchStudents(tblStudents, txtSearch.getText()));
-        txtSearch.addActionListener(e -> controller.searchStudents(tblStudents, txtSearch.getText()));
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { controller.searchStudents(tblStudents, txtSearch.getText()); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { controller.searchStudents(tblStudents, txtSearch.getText()); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { controller.searchStudents(tblStudents, txtSearch.getText()); }
+        });
         btnRefresh.addActionListener(e -> { txtSearch.setText(""); controller.loadStudents(tblStudents); });
-        btnPanel.add(btnSearch); btnPanel.add(btnRefresh);
+        btnPanel.add(btnRefresh);
         searchPanel.add(btnPanel, BorderLayout.EAST);
 
         tblStudents = new JTable(new DefaultTableModel(new Object[]{"Student ID", "First Name", "Last Name", "Email", "Phone", "Address"}, 0) {
@@ -227,9 +244,15 @@ public class RegistrationView extends JPanel {
     }
 
     private void clearForm() {
-        txtStudentId.setText("");
-        txtFirstName.setText(""); txtLastName.setText(""); txtEmail.setText("");
-        txtPhone.setText(""); txtAddress.setText("");
+        txtStudentId.setText("2024-0001");
+        txtFirstName.setText("e.g., Juan");
+        txtLastName.setText("e.g., Dela Cruz");
+        txtEmail.setText("email@example.com");
+        txtPhone.setText("09XXXXXXXXX");
+        txtAddress.setText("Street, City, Province");
+        for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone})
+            f.setForeground(Color.GRAY);
+        txtAddress.setForeground(Color.GRAY);
         selectedStudentId = null;
         tblStudents.clearSelection();
     }

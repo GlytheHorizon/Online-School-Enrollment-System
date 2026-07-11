@@ -59,7 +59,7 @@ public class EnrollmentDAOImpl implements EnrollmentDAO {
                      "FROM enrollments e " +
                      "JOIN students s ON e.student_id = s.student_id " +
                      "JOIN courses c ON e.course_id = c.course_id " +
-                     "ORDER BY e.enrollment_date DESC";
+                     "WHERE e.status='Enrolled' ORDER BY e.enrollment_date DESC";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
@@ -75,7 +75,7 @@ public class EnrollmentDAOImpl implements EnrollmentDAO {
                      "FROM enrollments e " +
                      "JOIN students s ON e.student_id = s.student_id " +
                      "JOIN courses c ON e.course_id = c.course_id " +
-                     "WHERE e.student_id = ? ORDER BY e.enrollment_date DESC";
+                     "WHERE e.student_id = ? AND e.status='Enrolled' ORDER BY e.enrollment_date DESC";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, studentId);
@@ -93,7 +93,7 @@ public class EnrollmentDAOImpl implements EnrollmentDAO {
                      "FROM enrollments e " +
                      "JOIN students s ON e.student_id = s.student_id " +
                      "JOIN courses c ON e.course_id = c.course_id " +
-                     "WHERE e.course_id = ? ORDER BY e.enrollment_date DESC";
+                     "WHERE e.course_id = ? AND e.status='Enrolled' ORDER BY e.enrollment_date DESC";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, courseId);
@@ -111,7 +111,7 @@ public class EnrollmentDAOImpl implements EnrollmentDAO {
                      "FROM enrollments e " +
                      "JOIN students s ON e.student_id = s.student_id " +
                      "JOIN courses c ON e.course_id = c.course_id " +
-                     "WHERE s.first_name LIKE ? OR s.last_name LIKE ? OR c.course_name LIKE ? OR c.course_code LIKE ? " +
+                     "WHERE e.status='Enrolled' AND (s.first_name LIKE ? OR s.last_name LIKE ? OR c.course_name LIKE ? OR c.course_code LIKE ?) " +
                      "ORDER BY e.enrollment_date DESC";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

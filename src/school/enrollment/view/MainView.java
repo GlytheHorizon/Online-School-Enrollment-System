@@ -61,7 +61,7 @@ public class MainView extends JFrame {
 
         JPanel statusBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 3));
         statusBar.setBackground(UIHelper.HEADER_BG);
-        JLabel statusLabel = new JLabel("  Online School Enrollment System v1.0  |  MVC + DAO Architecture  |  Group 2");
+        JLabel statusLabel = new JLabel("  Online School Enrollment System v2.0  |  MVC + DAO Architecture  |  Group 2");
         statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         statusLabel.setForeground(UIHelper.HEADER_FG);
         statusBar.add(statusLabel);

@@ -3,8 +3,11 @@ package school.enrollment.view;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 import javax.swing.text.PlainDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -22,7 +25,7 @@ public class PaymentView extends JPanel {
     private JComboBox<Student> cmbStudent;
     private JTable tblEnrollments, tblHistory;
     private JComboBox<String> cmbPaymentMethod;
-    private JTextField txtAmount, txtReference;
+    private JTextField txtAmount, txtReference, txtHistorySearch;
     private JLabel lblCount, lblTotalBalance, lblTotalPaid, lblSelectedBalance;
 
     public PaymentView() {
@@ -194,14 +197,48 @@ public class PaymentView extends JPanel {
         panel.setBorder(UIHelper.createBorder("Payment History"));
         UIHelper.stylePanel(panel);
 
+        JPanel searchPanel = new JPanel(new BorderLayout(5, 5));
+        UIHelper.stylePanel(searchPanel);
+        txtHistorySearch = new JTextField();
+        UIHelper.styleField(txtHistorySearch);
+        JLabel sl = new JLabel("Search: ");
+        UIHelper.styleLabel(sl);
+        searchPanel.add(sl, BorderLayout.WEST);
+        searchPanel.add(txtHistorySearch, BorderLayout.CENTER);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        UIHelper.stylePanel(btnPanel);
+        JButton btnRefresh = UIHelper.createButton("Show All", UIHelper.ACCENT);
+        txtHistorySearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { searchPaymentHistory(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { searchPaymentHistory(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { searchPaymentHistory(); }
+        });
+        btnRefresh.addActionListener(e -> { txtHistorySearch.setText(""); loadPaymentHistory(); });
+        btnPanel.add(btnRefresh);
+        searchPanel.add(btnPanel, BorderLayout.EAST);
+
         String[] cols = {"Payment ID", "Course", "Amount", "Method", "Reference", "Date"};
         tblHistory = new JTable(new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int row, int col) { return false; }
         });
         UIHelper.styleTable(tblHistory);
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(tblHistory.getModel());
+        tblHistory.setRowSorter(sorter);
 
+        panel.add(searchPanel, BorderLayout.NORTH);
         panel.add(new JScrollPane(tblHistory), BorderLayout.CENTER);
         return panel;
+    }
+
+    private void searchPaymentHistory() {
+        DefaultRowSorter<?, ?> sorter = (DefaultRowSorter<?, ?>) tblHistory.getRowSorter();
+        String kw = txtHistorySearch.getText().trim();
+        if (kw.isEmpty()) {
+            sorter.setRowFilter(null);
+        } else {
+            sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(kw)));
+        }
     }
 
     private void paySelected(boolean all) {

@@ -134,12 +134,14 @@ public class CourseView extends JPanel {
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         UIHelper.stylePanel(btnPanel);
-        JButton btnSearch = UIHelper.createButton("Search", UIHelper.ACCENT);
         JButton btnRefresh = UIHelper.createButton("Refresh", UIHelper.ACCENT);
-        btnSearch.addActionListener(e -> controller.searchCourses(tblCourses, txtSearch.getText()));
-        txtSearch.addActionListener(e -> controller.searchCourses(tblCourses, txtSearch.getText()));
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { controller.searchCourses(tblCourses, txtSearch.getText()); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { controller.searchCourses(tblCourses, txtSearch.getText()); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { controller.searchCourses(tblCourses, txtSearch.getText()); }
+        });
         btnRefresh.addActionListener(e -> { txtSearch.setText(""); controller.loadCourses(tblCourses); });
-        btnPanel.add(btnSearch); btnPanel.add(btnRefresh);
+        btnPanel.add(btnRefresh);
         searchPanel.add(btnPanel, BorderLayout.EAST);
 
         tblCourses = new JTable(new DefaultTableModel(new Object[]{"ID", "Code", "Name", "Units", "Tuition/Unit", "Total Tuition"}, 0) {

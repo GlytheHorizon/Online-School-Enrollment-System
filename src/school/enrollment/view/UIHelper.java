@@ -1,6 +1,8 @@
 package school.enrollment.view;
 
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import javax.swing.*;
 import javax.swing.border.*;
 
@@ -64,5 +66,47 @@ public class UIHelper {
     public static void styleLabel(JLabel label) {
         label.setFont(MAIN_FONT);
         label.setForeground(LABEL_FG);
+    }
+
+    public static void setPlaceholder(JTextField field, String placeholder) {
+        field.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) {
+                if (placeholder.equals(field.getText())) {
+                    field.setText("");
+                    field.setForeground(Color.BLACK);
+                }
+            }
+            public void focusLost(FocusEvent e) {
+                if (field.getText().isEmpty()) {
+                    field.setText(placeholder);
+                    field.setForeground(Color.GRAY);
+                }
+            }
+        });
+        if (field.getText().isEmpty()) {
+            field.setText(placeholder);
+            field.setForeground(Color.GRAY);
+        }
+    }
+
+    public static void setPlaceholder(JTextArea area, String placeholder) {
+        area.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) {
+                if (placeholder.equals(area.getText())) {
+                    area.setText("");
+                    area.setForeground(Color.BLACK);
+                }
+            }
+            public void focusLost(FocusEvent e) {
+                if (area.getText().isEmpty()) {
+                    area.setText(placeholder);
+                    area.setForeground(Color.GRAY);
+                }
+            }
+        });
+        if (area.getText().isEmpty()) {
+            area.setText(placeholder);
+            area.setForeground(Color.GRAY);
+        }
     }
 }

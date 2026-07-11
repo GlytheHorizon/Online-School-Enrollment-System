@@ -117,12 +117,14 @@ public class EnrollmentView extends JPanel {
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         UIHelper.stylePanel(btnPanel);
-        JButton btnSearch = UIHelper.createButton("Search", UIHelper.ACCENT);
         JButton btnRefresh = UIHelper.createButton("Show All", UIHelper.ACCENT);
-        btnSearch.addActionListener(e -> enrollmentController.searchEnrollments(tblEnrollments, txtSearch.getText()));
-        txtSearch.addActionListener(e -> enrollmentController.searchEnrollments(tblEnrollments, txtSearch.getText()));
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { enrollmentController.searchEnrollments(tblEnrollments, txtSearch.getText()); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { enrollmentController.searchEnrollments(tblEnrollments, txtSearch.getText()); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { enrollmentController.searchEnrollments(tblEnrollments, txtSearch.getText()); }
+        });
         btnRefresh.addActionListener(e -> { txtSearch.setText(""); loadEnrollments(); });
-        btnPanel.add(btnSearch); btnPanel.add(btnRefresh);
+        btnPanel.add(btnRefresh);
         searchPanel.add(btnPanel, BorderLayout.EAST);
 
         tblEnrollments = new JTable(new DefaultTableModel(
@@ -153,12 +155,14 @@ public class EnrollmentView extends JPanel {
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         UIHelper.stylePanel(btnPanel);
-        JButton btnSearch = UIHelper.createButton("Search", UIHelper.ACCENT);
         JButton btnRefresh = UIHelper.createButton("Show All", UIHelper.ACCENT);
-        btnSearch.addActionListener(e -> enrollmentController.searchAuditLog(tblAudit, txtAuditSearch.getText()));
-        txtAuditSearch.addActionListener(e -> enrollmentController.searchAuditLog(tblAudit, txtAuditSearch.getText()));
+        txtAuditSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { enrollmentController.searchAuditLog(tblAudit, txtAuditSearch.getText()); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { enrollmentController.searchAuditLog(tblAudit, txtAuditSearch.getText()); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { enrollmentController.searchAuditLog(tblAudit, txtAuditSearch.getText()); }
+        });
         btnRefresh.addActionListener(e -> { txtAuditSearch.setText(""); loadAuditLog(); });
-        btnPanel.add(btnSearch); btnPanel.add(btnRefresh);
+        btnPanel.add(btnRefresh);
         searchPanel.add(btnPanel, BorderLayout.EAST);
 
         tblAudit = new JTable(new DefaultTableModel(
