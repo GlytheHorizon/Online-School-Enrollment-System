@@ -25,11 +25,12 @@ public class EnrollmentDAOImpl implements EnrollmentDAO {
     }
 
     @Override
-    public void delete(int enrollmentId) throws Exception {
-        String sql = "DELETE FROM enrollments WHERE enrollment_id=?";
+    public void updateStatus(int enrollmentId, String status) throws Exception {
+        String sql = "UPDATE enrollments SET status=? WHERE enrollment_id=?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, enrollmentId);
+            ps.setString(1, status);
+            ps.setInt(2, enrollmentId);
             ps.executeUpdate();
         }
     }

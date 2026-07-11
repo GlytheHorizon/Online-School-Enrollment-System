@@ -15,8 +15,8 @@ public class EnrollmentView extends JPanel {
     private final CourseController courseController;
     private JComboBox<Student> cmbStudent;
     private JComboBox<Course> cmbCourse;
-    private JTable tblEnrollments;
-    private JTextField txtSearch;
+    private JTable tblEnrollments, tblAudit;
+    private JTextField txtSearch, txtAuditSearch;
 
     public EnrollmentView() {
         enrollmentController = new EnrollmentController();
@@ -29,13 +29,15 @@ public class EnrollmentView extends JPanel {
     }
 
     private void initComponents() {
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        split.setResizeWeight(0.25);
-        split.setDividerSize(6);
-        split.setBorder(null);
-        split.setTopComponent(createEnrollmentForm());
-        split.setBottomComponent(createTablePanel());
-        add(split, BorderLayout.CENTER);
+        add(createEnrollmentForm(), BorderLayout.NORTH);
+
+        JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        mainSplit.setResizeWeight(0.5);
+        mainSplit.setDividerSize(6);
+        mainSplit.setBorder(null);
+        mainSplit.setTopComponent(createEnrollmentTable());
+        mainSplit.setBottomComponent(createAuditTable());
+        add(mainSplit, BorderLayout.CENTER);
     }
 
     private JPanel createEnrollmentForm() {
@@ -80,7 +82,7 @@ public class EnrollmentView extends JPanel {
                 return;
             }
             enrollmentController.enrollStudent(s.getStudentId(), c.getCourseId());
-            loadEnrollments();
+            loadEnrollments(); loadAuditLog();
         });
         btnCancel.addActionListener(e -> {
             int row = tblEnrollments.getSelectedRow();
@@ -89,9 +91,9 @@ public class EnrollmentView extends JPanel {
                 return;
             }
             enrollmentController.cancelEnrollment((int) tblEnrollments.getValueAt(row, 0));
-            loadEnrollments();
+            loadEnrollments(); loadAuditLog();
         });
-        btnRefresh.addActionListener(e -> { loadComboBoxes(); loadEnrollments(); });
+        btnRefresh.addActionListener(e -> { loadComboBoxes(); loadEnrollments(); loadAuditLog(); });
 
         buttons.add(btnEnroll); buttons.add(btnCancel); buttons.add(btnRefresh);
         panel.add(fields, BorderLayout.CENTER);
@@ -99,9 +101,9 @@ public class EnrollmentView extends JPanel {
         return panel;
     }
 
-    private JPanel createTablePanel() {
+    private JPanel createEnrollmentTable() {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
-        panel.setBorder(UIHelper.createBorder("Enrollment History"));
+        panel.setBorder(UIHelper.createBorder("Active Enrollments"));
         UIHelper.stylePanel(panel);
 
         JPanel searchPanel = new JPanel(new BorderLayout(5, 5));
@@ -135,6 +137,42 @@ public class EnrollmentView extends JPanel {
         return panel;
     }
 
+    private JPanel createAuditTable() {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.setBorder(UIHelper.createBorder("Enrollment History (Audit Log)"));
+        UIHelper.stylePanel(panel);
+
+        JPanel searchPanel = new JPanel(new BorderLayout(5, 5));
+        UIHelper.stylePanel(searchPanel);
+        txtAuditSearch = new JTextField();
+        UIHelper.styleField(txtAuditSearch);
+        JLabel sl = new JLabel("Search: ");
+        UIHelper.styleLabel(sl);
+        searchPanel.add(sl, BorderLayout.WEST);
+        searchPanel.add(txtAuditSearch, BorderLayout.CENTER);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        UIHelper.stylePanel(btnPanel);
+        JButton btnSearch = UIHelper.createButton("Search", UIHelper.ACCENT);
+        JButton btnRefresh = UIHelper.createButton("Show All", UIHelper.ACCENT);
+        btnSearch.addActionListener(e -> enrollmentController.searchAuditLog(tblAudit, txtAuditSearch.getText()));
+        txtAuditSearch.addActionListener(e -> enrollmentController.searchAuditLog(tblAudit, txtAuditSearch.getText()));
+        btnRefresh.addActionListener(e -> { txtAuditSearch.setText(""); loadAuditLog(); });
+        btnPanel.add(btnSearch); btnPanel.add(btnRefresh);
+        searchPanel.add(btnPanel, BorderLayout.EAST);
+
+        tblAudit = new JTable(new DefaultTableModel(
+            new Object[]{"Audit ID", "Student", "Course Code", "Course", "Action", "Date & Time"}, 0) {
+            public boolean isCellEditable(int row, int col) { return false; }
+        });
+        UIHelper.styleTable(tblAudit);
+        loadAuditLog();
+
+        panel.add(searchPanel, BorderLayout.NORTH);
+        panel.add(new JScrollPane(tblAudit), BorderLayout.CENTER);
+        return panel;
+    }
+
     public void loadComboBoxes() {
         cmbStudent.removeAllItems();
         cmbCourse.removeAllItems();
@@ -150,10 +188,15 @@ public class EnrollmentView extends JPanel {
         enrollmentController.loadEnrollments(tblEnrollments);
     }
 
+    public void loadAuditLog() {
+        enrollmentController.loadAuditLog(tblAudit);
+    }
+
     @Override
     public void addNotify() {
         super.addNotify();
         loadComboBoxes();
         loadEnrollments();
+        loadAuditLog();
     }
 }

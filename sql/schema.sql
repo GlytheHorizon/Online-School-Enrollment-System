@@ -39,6 +39,16 @@ CREATE TABLE IF NOT EXISTS payments (
     FOREIGN KEY (enrollment_id) REFERENCES enrollments(enrollment_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS enrollment_audit (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(20) NOT NULL,
+    course_id INT NOT NULL,
+    action VARCHAR(20) NOT NULL,
+    action_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(course_id) ON DELETE CASCADE
+);
+
 INSERT INTO courses (course_code, course_name, units, tuition_per_unit) VALUES
 ('CS101', 'Introduction to Programming', 3, 1500.00),
 ('CS102', 'Data Structures', 3, 1800.00),

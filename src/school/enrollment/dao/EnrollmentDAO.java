@@ -5,7 +5,7 @@ import school.enrollment.model.Enrollment;
 
 public interface EnrollmentDAO {
     void insert(Enrollment enrollment) throws Exception;
-    void delete(int enrollmentId) throws Exception;
+    void updateStatus(int enrollmentId, String status) throws Exception;
     Enrollment get(int enrollmentId) throws Exception;
     List<Enrollment> getAll() throws Exception;
     List<Enrollment> getByStudent(String studentId) throws Exception;

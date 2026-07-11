@@ -5,17 +5,22 @@ import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import school.enrollment.dao.EnrollmentDAO;
+import school.enrollment.dao.EnrollmentAuditDAO;
 import school.enrollment.dao.PaymentDAO;
 import school.enrollment.daoimpl.EnrollmentDAOImpl;
+import school.enrollment.daoimpl.EnrollmentAuditDAOImpl;
 import school.enrollment.daoimpl.PaymentDAOImpl;
 import school.enrollment.model.Enrollment;
+import school.enrollment.model.EnrollmentAudit;
 
 public class EnrollmentController {
     private final EnrollmentDAO enrollmentDAO;
+    private final EnrollmentAuditDAO auditDAO;
     private final PaymentDAO paymentDAO;
 
     public EnrollmentController() {
         this.enrollmentDAO = new EnrollmentDAOImpl();
+        this.auditDAO = new EnrollmentAuditDAOImpl();
         this.paymentDAO = new PaymentDAOImpl();
     }
 
@@ -34,6 +39,13 @@ public class EnrollmentController {
             e.setCourseId(courseId);
             e.setStatus("Enrolled");
             enrollmentDAO.insert(e);
+
+            EnrollmentAudit audit = new EnrollmentAudit();
+            audit.setStudentId(studentId);
+            audit.setCourseId(courseId);
+            audit.setAction("ENROLLED");
+            auditDAO.insert(audit);
+
             JOptionPane.showMessageDialog(null, "Student enrolled successfully!\nEnrollment ID: " + e.getEnrollmentId(), "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "Error enrolling student: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
@@ -48,10 +60,22 @@ public class EnrollmentController {
         int confirm = JOptionPane.showConfirmDialog(null, "Cancel this enrollment?", "Confirm Cancel", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
         try {
-            enrollmentDAO.delete(enrollmentId);
+            Enrollment e = enrollmentDAO.get(enrollmentId);
+            if (e == null) {
+                JOptionPane.showMessageDialog(null, "Enrollment not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            enrollmentDAO.updateStatus(enrollmentId, "Cancelled");
+
+            EnrollmentAudit audit = new EnrollmentAudit();
+            audit.setStudentId(e.getStudentId());
+            audit.setCourseId(e.getCourseId());
+            audit.setAction("CANCELLED");
+            auditDAO.insert(audit);
+
             JOptionPane.showMessageDialog(null, "Enrollment cancelled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error cancelling enrollment: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "Error cancelling enrollment: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -91,6 +115,37 @@ public class EnrollmentController {
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "Error searching enrollments: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void loadAuditLog(JTable table) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.setRowCount(0);
+        try {
+            for (EnrollmentAudit a : auditDAO.getAll()) {
+                model.addRow(new Object[]{
+                    a.getAuditId(), a.getStudentName(), a.getCourseCode(),
+                    a.getCourseName(), a.getAction(), a.getActionDate()
+                });
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "Error loading history: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void searchAuditLog(JTable table, String keyword) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.setRowCount(0);
+        try {
+            List<EnrollmentAudit> list = keyword.trim().isEmpty() ? auditDAO.getAll() : auditDAO.search(keyword.trim());
+            for (EnrollmentAudit a : list) {
+                model.addRow(new Object[]{
+                    a.getAuditId(), a.getStudentName(), a.getCourseCode(),
+                    a.getCourseName(), a.getAction(), a.getActionDate()
+                });
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "Error searching history: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
