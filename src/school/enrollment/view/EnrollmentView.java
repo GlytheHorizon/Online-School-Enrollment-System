@@ -101,7 +101,7 @@ public class EnrollmentView extends JPanel {
 
     private JPanel createTablePanel() {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
-        panel.setBorder(UIHelper.createBorder("Enrollment Records"));
+        panel.setBorder(UIHelper.createBorder("Enrollment History"));
         UIHelper.stylePanel(panel);
 
         JPanel searchPanel = new JPanel(new BorderLayout(5, 5));

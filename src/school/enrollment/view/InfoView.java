@@ -45,10 +45,10 @@ public class InfoView extends JPanel {
 
         String[] members = {
             "Cruz, Jerwin E.",
-            "Matiga, John Michael",
-            "Villabroza, Clark Daren",
-            "Lazaro, Natalie",
-            "Layos, Joland"
+            "Layos, Joland",
+            "Lazaro, Nathalie Jane D.",
+            "Matiga, John Michael B.",
+            "Villabroza, Clark Darren J."
         };
 
         gbc.gridwidth = 1;

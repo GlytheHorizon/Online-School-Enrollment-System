@@ -55,6 +55,26 @@ public class RegistrationView extends JPanel {
         txtAddress.setLineWrap(true);
         for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone})
             UIHelper.styleField(f);
+        ((PlainDocument) txtPhone.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
+                String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String ns = (cur.substring(0, offs) + str + cur.substring(offs)).replaceAll("[^\\d]", "");
+                if (ns.length() > 11) return;
+                fb.replace(0, cur.length(), ns, a);
+            }
+            public void replace(FilterBypass fb, int offs, int len, String str, AttributeSet a) throws BadLocationException {
+                if (str == null) { fb.replace(offs, len, null, a); return; }
+                String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String ns = (cur.substring(0, offs) + str + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                if (ns.length() > 11) return;
+                fb.replace(0, cur.length(), ns, a);
+            }
+            public void remove(FilterBypass fb, int offs, int len) throws BadLocationException {
+                String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String ns = (cur.substring(0, offs) + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                fb.replace(0, cur.length(), ns, null);
+            }
+        });
         txtAddress.setFont(UIHelper.MAIN_FONT);
 
         ((PlainDocument) txtStudentId.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
