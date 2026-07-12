@@ -172,4 +172,13 @@ public class EnrollmentController {
             return 0;
         }
     }
+
+    public List<Enrollment> getSearchEnrollments(String keyword) {
+        try {
+            return keyword.trim().isEmpty() ? enrollmentDAO.getAll() : enrollmentDAO.search(keyword.trim());
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
 }
+

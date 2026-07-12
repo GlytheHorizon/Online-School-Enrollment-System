@@ -1,23 +1,31 @@
 package school.enrollment.view;
 
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.List;
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.PlainDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+import school.enrollment.controller.EnrollmentController;
 import school.enrollment.controller.StudentController;
+import school.enrollment.model.Enrollment;
+import school.enrollment.model.Student;
 
 public class RegistrationView extends JPanel {
     private final StudentController controller;
-    private JTextField txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone;
-    private JTextArea txtAddress;
+    private final EnrollmentController enrollmentController;
+    private JTextField txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone, txtAddress;
     private JTable tblStudents;
     private JTextField txtSearch;
     private String selectedStudentId;
 
     public RegistrationView() {
         controller = new StudentController();
+        enrollmentController = new EnrollmentController();
         selectedStudentId = null;
         UIHelper.stylePanel(this);
         setLayout(new BorderLayout(10, 10));
@@ -40,22 +48,17 @@ public class RegistrationView extends JPanel {
         panel.setBorder(UIHelper.createBorder("Student Registration Form"));
         UIHelper.stylePanel(panel);
 
-        JPanel fields = new JPanel(new GridBagLayout());
+        JPanel fields = new JPanel(new GridLayout(0, 2, 18, 12));
         UIHelper.stylePanel(fields);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(3, 5, 3, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
 
         txtStudentId = new JTextField(10);
         txtFirstName = new JTextField(20);
         txtLastName = new JTextField(20);
         txtEmail = new JTextField(20);
         txtPhone = new JTextField(20);
-        txtAddress = new JTextArea(2, 20);
-        txtAddress.setLineWrap(true);
-        for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone})
+        txtAddress = new JTextField(20);
+        for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone, txtAddress})
             UIHelper.styleField(f);
-        txtAddress.setFont(UIHelper.MAIN_FONT);
 
         ((PlainDocument) txtPhone.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
             public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
@@ -105,89 +108,44 @@ public class RegistrationView extends JPanel {
             }
         });
 
-        // Row 1: Student ID, First Name, Last Name
-        JLabel l1 = new JLabel("Student ID*:");
-        UIHelper.styleLabel(l1);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
-        fields.add(l1, gbc);
-        gbc.gridx = 1; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
         UIHelper.setPlaceholder(txtStudentId, "2024-0001");
-        fields.add(txtStudentId, gbc);
-
-        JLabel l2 = new JLabel("First Name*:");
-        UIHelper.styleLabel(l2);
-        gbc.gridx = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
-        fields.add(l2, gbc);
-        gbc.gridx = 3; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
         UIHelper.setPlaceholder(txtFirstName, "e.g., Juan");
-        fields.add(txtFirstName, gbc);
-
-        JLabel l3 = new JLabel("Last Name*:");
-        UIHelper.styleLabel(l3);
-        gbc.gridx = 4; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
-        fields.add(l3, gbc);
-        gbc.gridx = 5; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
         UIHelper.setPlaceholder(txtLastName, "e.g., Dela Cruz");
-        fields.add(txtLastName, gbc);
-
-        // Row 2: Email, Phone, Address
-        JLabel l4 = new JLabel("Email*:");
-        UIHelper.styleLabel(l4);
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
-        fields.add(l4, gbc);
-        gbc.gridx = 1; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
         UIHelper.setPlaceholder(txtEmail, "email@example.com");
-        fields.add(txtEmail, gbc);
-
-        JLabel l5 = new JLabel("Phone:");
-        UIHelper.styleLabel(l5);
-        gbc.gridx = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
-        fields.add(l5, gbc);
-        gbc.gridx = 3; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
         UIHelper.setPlaceholder(txtPhone, "09XXXXXXXXX");
-        fields.add(txtPhone, gbc);
-
-        gbc.gridx = 4; gbc.weightx = 0; gbc.anchor = GridBagConstraints.NORTHEAST;
-        JLabel l6 = new JLabel("Address:");
-        UIHelper.styleLabel(l6);
-        fields.add(l6, gbc);
-        gbc.gridx = 5; gbc.weightx = 1; gbc.anchor = GridBagConstraints.CENTER;
         UIHelper.setPlaceholder(txtAddress, "Street, City, Province");
-        fields.add(new JScrollPane(txtAddress), gbc);
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        fields.add(UIHelper.createLabeledField("Student ID*", txtStudentId));
+        fields.add(UIHelper.createLabeledField("First Name*", txtFirstName));
+        fields.add(UIHelper.createLabeledField("Last Name*", txtLastName));
+        fields.add(UIHelper.createLabeledField("Email*", txtEmail));
+        fields.add(UIHelper.createLabeledField("Phone", txtPhone));
+        fields.add(UIHelper.createLabeledField("Address", txtAddress));
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         UIHelper.stylePanel(buttons);
         JButton btnSave = UIHelper.createButton("Register", UIHelper.SUCCESS);
-        JButton btnUpdate = UIHelper.createButton("Update", UIHelper.ACCENT);
-        JButton btnDelete = UIHelper.createButton("Delete", new Color(192, 57, 43));
-        JButton btnClear = UIHelper.createButton("Clear", new Color(149, 165, 166));
+        JButton btnClear = UIHelper.createGhostButton("Clear");
 
         btnSave.addActionListener(e -> {
-            controller.registerStudent(txtStudentId.getText(), txtFirstName.getText(), txtLastName.getText(),
-                txtEmail.getText(), txtPhone.getText(), txtAddress.getText());
-            clearForm(); controller.loadStudents(tblStudents);
-        });
-        btnUpdate.addActionListener(e -> {
-            if (selectedStudentId == null) {
-                JOptionPane.showMessageDialog(this, "Select a student to update.", "No Selection", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            controller.updateStudent(selectedStudentId, txtFirstName.getText(), txtLastName.getText(),
-                txtEmail.getText(), txtPhone.getText(), txtAddress.getText());
-            clearForm(); controller.loadStudents(tblStudents);
-        });
-        btnDelete.addActionListener(e -> {
-            if (selectedStudentId == null) {
-                JOptionPane.showMessageDialog(this, "Select a student to delete.", "No Selection", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            controller.deleteStudent(selectedStudentId);
+            controller.registerStudent(
+                UIHelper.getCleanText(txtStudentId),
+                UIHelper.getCleanText(txtFirstName),
+                UIHelper.getCleanText(txtLastName),
+                UIHelper.getCleanText(txtEmail),
+                UIHelper.getCleanText(txtPhone),
+                UIHelper.getCleanText(txtAddress));
             clearForm(); controller.loadStudents(tblStudents);
         });
         btnClear.addActionListener(e -> clearForm());
 
-        buttons.add(btnSave); buttons.add(btnUpdate); buttons.add(btnDelete); buttons.add(btnClear);
-        panel.add(fields, BorderLayout.CENTER);
+        buttons.add(btnSave); buttons.add(btnClear);
+        
+        JPanel fieldsWrapper = new JPanel(new BorderLayout());
+        UIHelper.stylePanel(fieldsWrapper);
+        fieldsWrapper.add(fields, BorderLayout.NORTH);
+        
+        panel.add(fieldsWrapper, BorderLayout.CENTER);
         panel.add(buttons, BorderLayout.SOUTH);
         return panel;
     }
@@ -201,45 +159,45 @@ public class RegistrationView extends JPanel {
         UIHelper.stylePanel(searchPanel);
         txtSearch = new JTextField();
         UIHelper.styleField(txtSearch);
-        JLabel sl = new JLabel("Search: ");
-        UIHelper.styleLabel(sl);
-        searchPanel.add(sl, BorderLayout.WEST);
+        UIHelper.setPlaceholder(txtSearch, "Search students...");
         searchPanel.add(txtSearch, BorderLayout.CENTER);
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         UIHelper.stylePanel(btnPanel);
-        JButton btnRefresh = UIHelper.createButton("Refresh", UIHelper.ACCENT);
-        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { controller.searchStudents(tblStudents, txtSearch.getText()); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { controller.searchStudents(tblStudents, txtSearch.getText()); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { controller.searchStudents(tblStudents, txtSearch.getText()); }
-        });
-        btnRefresh.addActionListener(e -> { txtSearch.setText(""); controller.loadStudents(tblStudents); });
-        btnPanel.add(btnRefresh);
-        searchPanel.add(btnPanel, BorderLayout.EAST);
-
+        JButton btnSearch = UIHelper.createSecondaryButton("Search");
+        JButton btnRefresh = UIHelper.createGhostButton("Refresh");
         tblStudents = new JTable(new DefaultTableModel(new Object[]{"Student ID", "First Name", "Last Name", "Email", "Phone", "Address"}, 0) {
             public boolean isCellEditable(int row, int col) { return false; }
         });
+        tblStudents.setRowHeight(40);
         UIHelper.styleTable(tblStudents);
-        tblStudents.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int row = tblStudents.getSelectedRow();
+        JLabel emptyStudents = UIHelper.createEmptyStateLabel("No students found.");
+        txtSearch.addActionListener(e -> {
+            controller.searchStudents(tblStudents, UIHelper.getCleanText(txtSearch));
+            UIHelper.setEmptyStateVisible(tblStudents, emptyStudents);
+        });
+        btnSearch.addActionListener(e -> {
+            controller.searchStudents(tblStudents, UIHelper.getCleanText(txtSearch));
+            UIHelper.setEmptyStateVisible(tblStudents, emptyStudents);
+        });
+        btnRefresh.addActionListener(e -> { txtSearch.setText(""); controller.loadStudents(tblStudents); UIHelper.setEmptyStateVisible(tblStudents, emptyStudents); });
+        btnPanel.add(btnSearch);
+        btnPanel.add(btnRefresh);
+        searchPanel.add(btnPanel, BorderLayout.EAST);
+        tblStudents.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = tblStudents.rowAtPoint(e.getPoint());
                 if (row >= 0) {
-                    selectedStudentId = (String) tblStudents.getValueAt(row, 0);
-                    txtStudentId.setText(selectedStudentId);
-                    txtFirstName.setText((String) tblStudents.getValueAt(row, 1));
-                    txtLastName.setText((String) tblStudents.getValueAt(row, 2));
-                    txtEmail.setText((String) tblStudents.getValueAt(row, 3));
-                    txtPhone.setText((String) tblStudents.getValueAt(row, 4));
-                    txtAddress.setText((String) tblStudents.getValueAt(row, 5));
+                    openStudentDetails(row);
                 }
             }
         });
         controller.loadStudents(tblStudents);
+        UIHelper.setEmptyStateVisible(tblStudents, emptyStudents);
 
         panel.add(searchPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(tblStudents), BorderLayout.CENTER);
+        panel.add(UIHelper.createTableWithOverlay(tblStudents, emptyStudents), BorderLayout.CENTER);
         return panel;
     }
 
@@ -250,10 +208,218 @@ public class RegistrationView extends JPanel {
         txtEmail.setText("email@example.com");
         txtPhone.setText("09XXXXXXXXX");
         txtAddress.setText("Street, City, Province");
-        for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone})
+        for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone, txtAddress})
             f.setForeground(Color.GRAY);
-        txtAddress.setForeground(Color.GRAY);
         selectedStudentId = null;
         tblStudents.clearSelection();
+    }
+
+    private void openStudentDetails(int row) {
+        if (row < 0) return;
+        String studentId = (String) tblStudents.getValueAt(row, 0);
+        Student student = controller.getStudent(studentId);
+        if (student != null) {
+            new StudentDetailsDialog(student).setVisible(true);
+            controller.loadStudents(tblStudents);
+        }
+    }
+
+    private class StudentDetailsDialog extends JDialog {
+        private final JTextField txtStudentId;
+        private final JTextField txtFirstName;
+        private final JTextField txtLastName;
+        private final JTextField txtEmail;
+        private final JTextField txtPhone;
+        private final JTextField txtAddress;
+        private final JButton btnEdit;
+        private final JButton btnDelete;
+        private final JButton btnSave;
+        private final JButton btnCancel;
+
+        private final Student student;
+
+        public StudentDetailsDialog(Student student) {
+            super(SwingUtilities.getWindowAncestor(RegistrationView.this), "Student Details", ModalityType.APPLICATION_MODAL);
+            this.student = student;
+            setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+            setPreferredSize(new Dimension(1040, 720));
+            setMinimumSize(new Dimension(960, 660));
+            setResizable(true);
+
+            JPanel dialogRoot = new JPanel(new GridBagLayout());
+            dialogRoot.setBackground(new Color(235, 239, 246));
+            dialogRoot.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+            JPanel card = new JPanel(new BorderLayout(18, 18));
+            card.setPreferredSize(new Dimension(860, 620));
+            card.setBackground(Color.WHITE);
+            card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
+                BorderFactory.createEmptyBorder(24, 24, 24, 24)));
+
+            JPanel header = new JPanel(new BorderLayout());
+            header.setOpaque(false);
+            JLabel title = new JLabel("Student Details: " + student.getStudentId());
+            title.setFont(new Font("Segoe UI", Font.BOLD, 20));
+            title.setForeground(new Color(15, 23, 42));
+            header.add(title, BorderLayout.WEST);
+            card.add(header, BorderLayout.NORTH);
+
+            JPanel detailGrid = new JPanel(new GridLayout(0, 2, 10, 8));
+            detailGrid.setOpaque(false);
+
+            txtStudentId = new JTextField(student.getStudentId());
+            txtFirstName = new JTextField(student.getFirstName());
+            txtLastName = new JTextField(student.getLastName());
+            txtEmail = new JTextField(student.getEmail());
+            txtPhone = new JTextField(student.getPhone());
+            txtAddress = new JTextField(student.getAddress());
+            UIHelper.styleField(txtStudentId);
+            UIHelper.styleField(txtFirstName);
+            UIHelper.styleField(txtLastName);
+            UIHelper.styleField(txtEmail);
+            UIHelper.styleField(txtPhone);
+            UIHelper.styleField(txtAddress);
+
+            detailGrid.add(UIHelper.createLabeledField("Student ID", txtStudentId));
+            detailGrid.add(UIHelper.createLabeledField("Email", txtEmail));
+            detailGrid.add(UIHelper.createLabeledField("First Name", txtFirstName));
+            detailGrid.add(UIHelper.createLabeledField("Phone", txtPhone));
+            detailGrid.add(UIHelper.createLabeledField("Last Name", txtLastName));
+            detailGrid.add(UIHelper.createLabeledField("Address", txtAddress));
+
+            JPanel coursesPanel = new JPanel(new BorderLayout(8, 8));
+            coursesPanel.setOpaque(false);
+            coursesPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
+                "Enrolled Courses", TitledBorder.LEADING, TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 13), new Color(51, 65, 85)));
+
+            JTable courseTable = new JTable(new DefaultTableModel(new Object[]{"Course Code", "Course", "Units", "Tuition", "Paid", "Balance"}, 0) {
+                public boolean isCellEditable(int row, int col) { return false; }
+            });
+            UIHelper.styleTable(courseTable);
+            JScrollPane courseScroll = new JScrollPane(courseTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            UIHelper.styleScrollPane(courseScroll);
+            courseScroll.setPreferredSize(new Dimension(200, 150));
+            coursesPanel.add(courseScroll, BorderLayout.CENTER);
+
+            List<Enrollment> enrollments = enrollmentController.getEnrollmentsByStudent(student.getStudentId());
+            for (Enrollment e : enrollments) {
+                double paid = enrollmentController.getTotalPaid(e.getEnrollmentId());
+                double bal = Math.max(0, e.getTotalTuition() - paid);
+                ((DefaultTableModel) courseTable.getModel()).addRow(new Object[]{e.getCourseCode(), e.getCourseName(), e.getUnits(), String.format("%.2f", e.getTotalTuition()), String.format("%.2f", paid), String.format("%.2f", bal)});
+            }
+
+            btnDelete = UIHelper.createButton("Delete", new Color(192, 57, 43));
+            btnEdit = UIHelper.createSecondaryButton("Edit");
+            btnSave = UIHelper.createButton("Save", new Color(22, 163, 74));
+            btnCancel = UIHelper.createSecondaryButton("Cancel");
+
+            btnSave.setVisible(false);
+            btnCancel.setVisible(false);
+
+            btnEdit.addActionListener(e -> setEditMode(true));
+            btnDelete.addActionListener(e -> {
+                if (JOptionPane.showConfirmDialog(this, "Delete student " + student.getStudentId() + "?", "Confirm Delete", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                    controller.deleteStudent(student.getStudentId());
+                    dispose();
+                }
+            });
+            btnSave.addActionListener(e -> {
+                controller.updateStudent(
+                    student.getStudentId(),
+                    UIHelper.getCleanText(txtFirstName),
+                    UIHelper.getCleanText(txtLastName),
+                    UIHelper.getCleanText(txtEmail),
+                    UIHelper.getCleanText(txtPhone),
+                    UIHelper.getCleanText(txtAddress));
+                setEditMode(false);
+                dispose();
+            });
+            btnCancel.addActionListener(e -> {
+                setEditMode(false);
+                loadDetails();
+            });
+
+            JPanel editBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 4));
+            editBar.setOpaque(false);
+            editBar.add(btnEdit);
+            editBar.add(btnSave);
+            editBar.add(btnCancel);
+
+            JPanel detailWrapper = new JPanel(new GridBagLayout());
+            detailWrapper.setOpaque(false);
+            GridBagConstraints dwGbc = new GridBagConstraints();
+            dwGbc.gridx = 0; dwGbc.gridy = 0;
+            dwGbc.weightx = 1.0; dwGbc.weighty = 0.0;
+            dwGbc.fill = GridBagConstraints.HORIZONTAL;
+            detailWrapper.add(detailGrid, dwGbc);
+
+            dwGbc.gridy = 1;
+            dwGbc.insets = new Insets(10, 0, 0, 0);
+            detailWrapper.add(editBar, dwGbc);
+
+            dwGbc.gridy = 2;
+            dwGbc.weighty = 1.0;
+            dwGbc.fill = GridBagConstraints.BOTH;
+            detailWrapper.add(Box.createGlue(), dwGbc);
+
+            card.add(detailWrapper, BorderLayout.CENTER);
+
+            JPanel deleteBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+            deleteBar.setOpaque(false);
+            deleteBar.add(btnDelete);
+
+            JPanel bottomWrapper = new JPanel(new BorderLayout(8, 8));
+            bottomWrapper.setOpaque(false);
+            bottomWrapper.add(coursesPanel, BorderLayout.CENTER);
+            bottomWrapper.add(deleteBar, BorderLayout.SOUTH);
+            card.add(bottomWrapper, BorderLayout.SOUTH);
+
+            setEditMode(false);
+            dialogRoot.add(card);
+            setContentPane(dialogRoot);
+            pack();
+            setLocationRelativeTo(getOwner());
+        }
+
+        private void loadDetails() {
+            txtStudentId.setText(student.getStudentId());
+            txtFirstName.setText(student.getFirstName());
+            txtLastName.setText(student.getLastName());
+            txtEmail.setText(student.getEmail());
+            txtPhone.setText(student.getPhone());
+            txtAddress.setText(student.getAddress());
+        }
+
+        private void styleFieldMode(JTextField field, boolean editable) {
+            field.setEditable(editable);
+            field.setFocusable(editable);
+            if (editable) {
+                UIHelper.styleField(field);
+                field.setBackground(Color.WHITE);
+                field.setOpaque(true);
+                field.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+            } else {
+                field.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+                field.setBackground(Color.WHITE);
+                field.setOpaque(false);
+                field.setCursor(Cursor.getDefaultCursor());
+            }
+        }
+
+        private void setEditMode(boolean editable) {
+            styleFieldMode(txtStudentId, false);
+            styleFieldMode(txtFirstName, editable);
+            styleFieldMode(txtLastName, editable);
+            styleFieldMode(txtEmail, editable);
+            styleFieldMode(txtPhone, editable);
+            styleFieldMode(txtAddress, editable);
+            btnEdit.setVisible(!editable);
+            btnDelete.setVisible(!editable);
+            btnSave.setVisible(editable);
+            btnCancel.setVisible(editable);
+        }
     }
 }

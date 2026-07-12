@@ -14,24 +14,51 @@ public class MainView extends JFrame {
     public MainView() {
         setTitle("Online School Enrollment System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1150, 780);
+        setSize(1200, 820);
         setLocationRelativeTo(null);
         setIconImage(null);
 
         try {
             UIManager.put("TabbedPane.font", new Font("Segoe UI", Font.BOLD, 13));
-            UIManager.put("TabbedPane.selected", new Color(41, 128, 185));
-            UIManager.put("TabbedPane.contentAreaColor", new Color(245, 246, 250));
-        } catch (Exception e) { /* ignore */ }
+            UIManager.put("TabbedPane.selected", new Color(37, 99, 235));
+            UIManager.put("TabbedPane.contentAreaColor", new Color(248, 250, 252));
+            UIManager.put("TabbedPane.foreground", new Color(71, 85, 105));
+        } catch (Exception e) {
+            /* ignore */ }
 
         initComponents();
         setVisible(true);
     }
 
     private void initComponents() {
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(new Color(248, 250, 252));
+
+        JPanel header = new JPanel(new BorderLayout(12, 0));
+        header.setBackground(new Color(15, 23, 42));
+        header.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
+
+        JPanel titlePanel = new JPanel();
+        titlePanel.setOpaque(false);
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+        JLabel title = new JLabel("School Enrollment Portal");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setForeground(Color.WHITE);
+        JLabel subtitle = new JLabel("Student records and billing management");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subtitle.setForeground(new Color(226, 232, 240));
+        titlePanel.add(title);
+        titlePanel.add(Box.createVerticalStrut(4));
+        titlePanel.add(subtitle);
+
+        header.add(titlePanel, BorderLayout.CENTER);
+
+        root.add(header, BorderLayout.NORTH);
+
         JTabbedPane tabs = new JTabbedPane();
-        tabs.setBackground(new Color(236, 240, 241));
-        tabs.setBorder(BorderFactory.createEmptyBorder(2, 2, 0, 2));
+        tabs.setBackground(new Color(241, 245, 249));
+        tabs.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(226, 232, 240)));
+        tabs.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 
         registrationView = new RegistrationView();
         courseView = new CourseView();
@@ -39,11 +66,27 @@ public class MainView extends JFrame {
         paymentView = new PaymentView();
         infoView = new InfoView();
 
-        tabs.addTab("  Student Registration  ", registrationView);
-        tabs.addTab("  Course Management  ", courseView);
-        tabs.addTab("  Enrollment  ", enrollmentView);
-        tabs.addTab("  Tuition Payment  ", paymentView);
-        tabs.addTab("  Info  ", infoView);
+        JScrollPane regScroll = new JScrollPane(registrationView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane courseScroll = new JScrollPane(courseView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane enrollScroll = new JScrollPane(enrollmentView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane paymentScroll = new JScrollPane(paymentView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane infoScroll = new JScrollPane(infoView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        UIHelper.styleScrollPane(regScroll);
+        UIHelper.styleScrollPane(courseScroll);
+        UIHelper.styleScrollPane(enrollScroll);
+        UIHelper.styleScrollPane(paymentScroll);
+        UIHelper.styleScrollPane(infoScroll);
+
+        tabs.addTab("  Student Registration  ", regScroll);
+        tabs.addTab("  Course Management  ", courseScroll);
+        tabs.addTab("  Enrollment  ", enrollScroll);
+        tabs.addTab("  Tuition Payment  ", paymentScroll);
+        tabs.addTab("  Info  ", infoScroll);
 
         tabs.addChangeListener((ChangeEvent e) -> {
             int idx = tabs.getSelectedIndex();
@@ -57,14 +100,17 @@ public class MainView extends JFrame {
             }
         });
 
-        add(tabs, BorderLayout.CENTER);
+        root.add(tabs, BorderLayout.CENTER);
 
         JPanel statusBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 3));
-        statusBar.setBackground(UIHelper.HEADER_BG);
-        JLabel statusLabel = new JLabel("  Online School Enrollment System v2.0  |  MVC + DAO Architecture  |  Group 2");
+        statusBar.setBackground(new Color(30, 41, 59));
+        JLabel statusLabel = new JLabel(
+                "  Online School Enrollment System v2.0  |  MVC + DAO Architecture  |  Group 2");
         statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        statusLabel.setForeground(UIHelper.HEADER_FG);
+        statusLabel.setForeground(Color.WHITE);
         statusBar.add(statusLabel);
-        add(statusBar, BorderLayout.SOUTH);
+        root.add(statusBar, BorderLayout.SOUTH);
+
+        setContentPane(root);
     }
 }

@@ -3,7 +3,6 @@ package school.enrollment.view;
 import java.awt.*;
 import javax.swing.*;
 
-
 public class InfoView extends JPanel {
     public InfoView() {
         UIHelper.stylePanel(this);
@@ -19,36 +18,54 @@ public class InfoView extends JPanel {
         gbc.insets = new Insets(5, 10, 5, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        JPanel hero = new JPanel(new BorderLayout(12, 0));
+        hero.setBackground(new Color(255, 255, 255));
+        hero.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
+                BorderFactory.createEmptyBorder(16, 18, 16, 18)));
+
+        JPanel heroText = new JPanel();
+        heroText.setOpaque(false);
+        heroText.setLayout(new BoxLayout(heroText, BoxLayout.Y_AXIS));
         JLabel title = new JLabel("Online School Enrollment System");
         title.setFont(new Font("Segoe UI", Font.BOLD, 22));
         title.setForeground(UIHelper.HEADER_BG);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        center.add(title, gbc);
-
         JLabel sub = new JLabel("MVC + DAO Architecture  |  Java Swing + MySQL");
         sub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         sub.setForeground(new Color(100, 100, 100));
+        heroText.add(title);
+        heroText.add(Box.createVerticalStrut(4));
+        heroText.add(sub);
+
+        hero.add(heroText, BorderLayout.CENTER);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        center.add(hero, gbc);
+
         gbc.gridy = 1;
-        center.add(sub, gbc);
 
         JSeparator sep = new JSeparator();
-        gbc.gridy = 2; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridy = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(15, 10, 15, 10);
         center.add(sep, gbc);
 
         JLabel groupLabel = new JLabel("Group 2");
         groupLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         groupLabel.setForeground(UIHelper.HEADER_BG);
-        gbc.gridy = 3; gbc.insets = new Insets(5, 10, 5, 10);
+        gbc.gridy = 3;
+        gbc.insets = new Insets(5, 10, 5, 10);
         center.add(groupLabel, gbc);
 
         String[] members = {
-            "Cruz, Jerwin E.",
-            "Layos, Joland",
-            "Lazaro, Nathalie Jane D.",
-            "Matiga, John Michael B.",
-            "Villabroza, Clark Darren J."
+                "Cruz, Jerwin E.",
+                "Layos, Joland",
+                "Lazaro, Natalie Jane D.",
+                "Matiga, John Michael B.",
+                "Villabroza, Clark Darren J."
         };
 
         gbc.gridwidth = 1;
@@ -67,7 +84,9 @@ public class InfoView extends JPanel {
             center.add(name, gbc);
         }
 
-        gbc.gridy = 4 + members.length; gbc.gridx = 0; gbc.gridwidth = 2;
+        gbc.gridy = 4 + members.length;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
         gbc.insets = new Insets(20, 10, 5, 10);
         JSeparator sep2 = new JSeparator();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -76,7 +95,8 @@ public class InfoView extends JPanel {
         JLabel footer = new JLabel("\u00a9 2026  |  TESDA Activity 15");
         footer.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         footer.setForeground(new Color(150, 150, 150));
-        gbc.gridy = 5 + members.length; gbc.anchor = GridBagConstraints.CENTER;
+        gbc.gridy = 5 + members.length;
+        gbc.anchor = GridBagConstraints.CENTER;
         center.add(footer, gbc);
 
         add(center, BorderLayout.CENTER);

@@ -28,6 +28,10 @@ public class PaymentController {
             JOptionPane.showMessageDialog(null, "Please select a payment method.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
+        if (referenceNumber == null || referenceNumber.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Reference number is required.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
         try {
             Payment p = new Payment();
@@ -57,15 +61,40 @@ public class PaymentController {
         }
     }
 
+    public List<Payment> aggregatePayments(List<Payment> payments) {
+        java.util.Map<String, Payment> grouped = new java.util.LinkedHashMap<>();
+        for (Payment p : payments) {
+            String key = p.getStudentName() + "_" + p.getReferenceNumber() + "_" + p.getPaymentMethod() + "_" + p.getPaymentDate();
+            if (grouped.containsKey(key)) {
+                Payment existing = grouped.get(key);
+                existing.setAmount(existing.getAmount() + p.getAmount());
+            } else {
+                Payment clone = new Payment();
+                clone.setPaymentId(p.getPaymentId());
+                clone.setEnrollmentId(p.getEnrollmentId());
+                clone.setStudentName(p.getStudentName());
+                clone.setReferenceNumber(p.getReferenceNumber());
+                clone.setPaymentMethod(p.getPaymentMethod());
+                clone.setPaymentDate(p.getPaymentDate());
+                clone.setAmount(p.getAmount());
+                grouped.put(key, clone);
+            }
+        }
+        return new java.util.ArrayList<>(grouped.values());
+    }
+
     public void loadPayments(JTable table) {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
         try {
-            for (Payment p : paymentDAO.getAll()) {
+            List<Payment> aggregated = aggregatePayments(paymentDAO.getAll());
+            for (Payment p : aggregated) {
                 model.addRow(new Object[]{
-                    p.getPaymentId(), p.getStudentName(), p.getCourseName(),
-                    String.format("%.2f", p.getAmount()), p.getPaymentMethod(),
-                    p.getReferenceNumber(), p.getPaymentDate()
+                    p.getStudentName(),
+                    String.format("%.2f", p.getAmount()),
+                    p.getPaymentMethod(),
+                    p.getReferenceNumber(),
+                    p.getPaymentDate() != null ? p.getPaymentDate().toString() : ""
                 });
             }
         } catch (Exception e) {
@@ -86,11 +115,14 @@ public class PaymentController {
         model.setRowCount(0);
         try {
             List<Payment> list = keyword.trim().isEmpty() ? paymentDAO.getAll() : paymentDAO.search(keyword.trim());
-            for (Payment p : list) {
+            List<Payment> aggregated = aggregatePayments(list);
+            for (Payment p : aggregated) {
                 model.addRow(new Object[]{
-                    p.getPaymentId(), p.getStudentName(), p.getCourseName(),
-                    String.format("%.2f", p.getAmount()), p.getPaymentMethod(),
-                    p.getReferenceNumber(), p.getPaymentDate()
+                    p.getStudentName(),
+                    String.format("%.2f", p.getAmount()),
+                    p.getPaymentMethod(),
+                    p.getReferenceNumber(),
+                    p.getPaymentDate() != null ? p.getPaymentDate().toString() : ""
                 });
             }
         } catch (Exception e) {

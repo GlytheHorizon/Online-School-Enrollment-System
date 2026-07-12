@@ -11,6 +11,7 @@ public class CourseView extends JPanel {
     private JTable tblCourses;
     private JTextField txtSearch;
     private int selectedCourseId;
+    private JButton btnAdd, btnUpdate, btnDelete, btnClear;
 
     public CourseView() {
         controller = new CourseController();
@@ -36,11 +37,8 @@ public class CourseView extends JPanel {
         panel.setBorder(UIHelper.createBorder("Course Management"));
         UIHelper.stylePanel(panel);
 
-        JPanel fields = new JPanel(new GridBagLayout());
+        JPanel fields = new JPanel(new GridLayout(0, 2, 18, 12));
         UIHelper.stylePanel(fields);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(3, 5, 3, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
 
         txtCourseCode = new JTextField(15);
         txtCourseName = new JTextField(20);
@@ -49,36 +47,20 @@ public class CourseView extends JPanel {
         for (JTextField f : new JTextField[]{txtCourseCode, txtCourseName, txtUnits, txtTuition})
             UIHelper.styleField(f);
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
-        JLabel l1 = new JLabel("Course Code*:");
-        UIHelper.styleLabel(l1); fields.add(l1, gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
-        fields.add(txtCourseCode, gbc);
+        fields.add(UIHelper.createLabeledField("Course Code*", txtCourseCode));
+        fields.add(UIHelper.createLabeledField("Course Name*", txtCourseName));
+        fields.add(UIHelper.createLabeledField("Units", txtUnits));
+        fields.add(UIHelper.createLabeledField("Tuition/Unit (P)", txtTuition));
 
-        gbc.gridx = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
-        JLabel l2 = new JLabel("Course Name*:");
-        UIHelper.styleLabel(l2); fields.add(l2, gbc);
-        gbc.gridx = 3; gbc.weightx = 1;
-        fields.add(txtCourseName, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
-        JLabel l3 = new JLabel("Units:");
-        UIHelper.styleLabel(l3); fields.add(l3, gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
-        fields.add(txtUnits, gbc);
-
-        gbc.gridx = 2; gbc.weightx = 0; gbc.anchor = GridBagConstraints.EAST;
-        JLabel l4 = new JLabel("Tuition/Unit (P):");
-        UIHelper.styleLabel(l4); fields.add(l4, gbc);
-        gbc.gridx = 3; gbc.weightx = 1;
-        fields.add(txtTuition, gbc);
-
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         UIHelper.stylePanel(buttons);
-        JButton btnAdd = UIHelper.createButton("Add", UIHelper.SUCCESS);
-        JButton btnUpdate = UIHelper.createButton("Update", UIHelper.ACCENT);
-        JButton btnDelete = UIHelper.createButton("Delete", new Color(192, 57, 43));
-        JButton btnClear = UIHelper.createButton("Clear", new Color(149, 165, 166));
+        btnAdd = UIHelper.createButton("Add", UIHelper.SUCCESS);
+        btnUpdate = UIHelper.createButton("Update", UIHelper.ACCENT);
+        btnDelete = UIHelper.createButton("Delete", new Color(192, 57, 43));
+        btnClear = UIHelper.createGhostButton("Clear");
+
+        btnUpdate.setVisible(false);
+        btnDelete.setVisible(false);
 
         btnAdd.addActionListener(e -> {
             try {
@@ -113,7 +95,12 @@ public class CourseView extends JPanel {
         btnClear.addActionListener(e -> clearForm());
 
         buttons.add(btnAdd); buttons.add(btnUpdate); buttons.add(btnDelete); buttons.add(btnClear);
-        panel.add(fields, BorderLayout.CENTER);
+        
+        JPanel fieldsWrapper = new JPanel(new BorderLayout());
+        UIHelper.stylePanel(fieldsWrapper);
+        fieldsWrapper.add(fields, BorderLayout.NORTH);
+        
+        panel.add(fieldsWrapper, BorderLayout.CENTER);
         panel.add(buttons, BorderLayout.SOUTH);
         return panel;
     }
@@ -127,27 +114,30 @@ public class CourseView extends JPanel {
         UIHelper.stylePanel(searchPanel);
         txtSearch = new JTextField();
         UIHelper.styleField(txtSearch);
-        JLabel sl = new JLabel("Search: ");
-        UIHelper.styleLabel(sl);
-        searchPanel.add(sl, BorderLayout.WEST);
+        UIHelper.setPlaceholder(txtSearch, "Search courses...");
         searchPanel.add(txtSearch, BorderLayout.CENTER);
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         UIHelper.stylePanel(btnPanel);
-        JButton btnRefresh = UIHelper.createButton("Refresh", UIHelper.ACCENT);
-        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { controller.searchCourses(tblCourses, txtSearch.getText()); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { controller.searchCourses(tblCourses, txtSearch.getText()); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { controller.searchCourses(tblCourses, txtSearch.getText()); }
-        });
-        btnRefresh.addActionListener(e -> { txtSearch.setText(""); controller.loadCourses(tblCourses); });
-        btnPanel.add(btnRefresh);
-        searchPanel.add(btnPanel, BorderLayout.EAST);
-
+        JButton btnSearch = UIHelper.createSecondaryButton("Search");
+        JButton btnRefresh = UIHelper.createGhostButton("Refresh");
         tblCourses = new JTable(new DefaultTableModel(new Object[]{"ID", "Code", "Name", "Units", "Tuition/Unit", "Total Tuition"}, 0) {
             public boolean isCellEditable(int row, int col) { return false; }
         });
         UIHelper.styleTable(tblCourses);
+        JLabel emptyCourses = UIHelper.createEmptyStateLabel("No courses found.");
+        txtSearch.addActionListener(e -> {
+            controller.searchCourses(tblCourses, UIHelper.getCleanText(txtSearch));
+            UIHelper.setEmptyStateVisible(tblCourses, emptyCourses);
+        });
+        btnSearch.addActionListener(e -> {
+            controller.searchCourses(tblCourses, UIHelper.getCleanText(txtSearch));
+            UIHelper.setEmptyStateVisible(tblCourses, emptyCourses);
+        });
+        btnRefresh.addActionListener(e -> { txtSearch.setText(""); controller.loadCourses(tblCourses); UIHelper.setEmptyStateVisible(tblCourses, emptyCourses); });
+        btnPanel.add(btnSearch);
+        btnPanel.add(btnRefresh);
+        searchPanel.add(btnPanel, BorderLayout.EAST);
         tblCourses.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int row = tblCourses.getSelectedRow();
@@ -157,13 +147,18 @@ public class CourseView extends JPanel {
                     txtCourseName.setText((String) tblCourses.getValueAt(row, 2));
                     txtUnits.setText(tblCourses.getValueAt(row, 3).toString());
                     txtTuition.setText(tblCourses.getValueAt(row, 4).toString().replace(",", ""));
+
+                    btnAdd.setVisible(false);
+                    btnUpdate.setVisible(true);
+                    btnDelete.setVisible(true);
                 }
             }
         });
         controller.loadCourses(tblCourses);
+        UIHelper.setEmptyStateVisible(tblCourses, emptyCourses);
 
         panel.add(searchPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(tblCourses), BorderLayout.CENTER);
+        panel.add(UIHelper.createTableWithOverlay(tblCourses, emptyCourses), BorderLayout.CENTER);
         return panel;
     }
 
@@ -171,5 +166,9 @@ public class CourseView extends JPanel {
         txtCourseCode.setText(""); txtCourseName.setText(""); txtUnits.setText(""); txtTuition.setText("");
         selectedCourseId = -1;
         tblCourses.clearSelection();
+
+        btnAdd.setVisible(true);
+        btnUpdate.setVisible(false);
+        btnDelete.setVisible(false);
     }
 }
