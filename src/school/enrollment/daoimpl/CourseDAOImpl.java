@@ -40,8 +40,8 @@ public class CourseDAOImpl implements CourseDAO {
     }
 
     @Override
-    public void delete(int courseId) throws Exception {
-        String sql = "DELETE FROM courses WHERE course_id=?";
+    public void deactivate(int courseId) throws Exception {
+        String sql = "UPDATE courses SET active=0 WHERE course_id=?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, courseId);
@@ -75,6 +75,18 @@ public class CourseDAOImpl implements CourseDAO {
     }
 
     @Override
+    public List<Course> getAllActive() throws Exception {
+        List<Course> list = new ArrayList<>();
+        String sql = "SELECT * FROM courses WHERE active=1 ORDER BY course_code";
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) list.add(mapCourse(rs));
+        }
+        return list;
+    }
+
+    @Override
     public List<Course> search(String keyword) throws Exception {
         List<Course> list = new ArrayList<>();
         String sql = "SELECT * FROM courses WHERE course_code LIKE ? OR course_name LIKE ? ORDER BY course_code";
@@ -90,6 +102,34 @@ public class CourseDAOImpl implements CourseDAO {
         return list;
     }
 
+    @Override
+    public List<Course> searchActive(String keyword) throws Exception {
+        List<Course> list = new ArrayList<>();
+        String sql = "SELECT * FROM courses WHERE active=1 AND (course_code LIKE ? OR course_name LIKE ?) ORDER BY course_code";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            String p = "%" + keyword + "%";
+            ps.setString(1, p);
+            ps.setString(2, p);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapCourse(rs));
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public boolean hasActiveEnrollments(int courseId) throws Exception {
+        String sql = "SELECT COUNT(*) FROM enrollments WHERE course_id=? AND status='Enrolled'";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, courseId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
     private Course mapCourse(ResultSet rs) throws SQLException {
         Course c = new Course();
         c.setCourseId(rs.getInt("course_id"));
@@ -97,6 +137,7 @@ public class CourseDAOImpl implements CourseDAO {
         c.setCourseName(rs.getString("course_name"));
         c.setUnits(rs.getInt("units"));
         c.setTuitionPerUnit(rs.getDouble("tuition_per_unit"));
+        c.setActive(rs.getInt("active") == 1);
         return c;
     }
 }

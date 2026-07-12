@@ -520,7 +520,7 @@ public class UIHelper {
         return placeholder != null && placeholder.equals(component.getText());
     }
 
-    private static Border createRoundedBorder(int radius, Color color) {
+    public static Border createRoundedBorder(int radius, Color color) {
         return new RoundedBorder(radius, color);
     }
 

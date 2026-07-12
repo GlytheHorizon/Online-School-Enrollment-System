@@ -40,8 +40,8 @@ public class StudentDAOImpl implements StudentDAO {
     }
 
     @Override
-    public void delete(String studentId) throws Exception {
-        String sql = "DELETE FROM students WHERE student_id=?";
+    public void deactivate(String studentId) throws Exception {
+        String sql = "UPDATE students SET active=0 WHERE student_id=?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, studentId);
@@ -75,6 +75,18 @@ public class StudentDAOImpl implements StudentDAO {
     }
 
     @Override
+    public List<Student> getAllActive() throws Exception {
+        List<Student> list = new ArrayList<>();
+        String sql = "SELECT * FROM students WHERE active=1 ORDER BY last_name, first_name";
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) list.add(mapStudent(rs));
+        }
+        return list;
+    }
+
+    @Override
     public List<Student> search(String keyword) throws Exception {
         List<Student> list = new ArrayList<>();
         String sql = "SELECT * FROM students WHERE student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email LIKE ? ORDER BY last_name, first_name";
@@ -92,6 +104,88 @@ public class StudentDAOImpl implements StudentDAO {
         return list;
     }
 
+    @Override
+    public List<Student> searchActive(String keyword) throws Exception {
+        List<Student> list = new ArrayList<>();
+        String sql = "SELECT * FROM students WHERE active=1 AND (student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email LIKE ?) ORDER BY last_name, first_name";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            String p = "%" + keyword + "%";
+            ps.setString(1, p);
+            ps.setString(2, p);
+            ps.setString(3, p);
+            ps.setString(4, p);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapStudent(rs));
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public List<Student> getAllInactive() throws Exception {
+        List<Student> list = new ArrayList<>();
+        String sql = "SELECT * FROM students WHERE active=0 ORDER BY last_name, first_name";
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) list.add(mapStudent(rs));
+        }
+        return list;
+    }
+
+    @Override
+    public List<Student> searchInactive(String keyword) throws Exception {
+        List<Student> list = new ArrayList<>();
+        String sql = "SELECT * FROM students WHERE active=0 AND (student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email LIKE ?) ORDER BY last_name, first_name";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            String p = "%" + keyword + "%";
+            ps.setString(1, p);
+            ps.setString(2, p);
+            ps.setString(3, p);
+            ps.setString(4, p);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapStudent(rs));
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public void reactivate(String studentId) throws Exception {
+        String sql = "UPDATE students SET active=1 WHERE student_id=?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, studentId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
+    public boolean hasActiveEnrollments(String studentId) throws Exception {
+        String sql = "SELECT COUNT(*) FROM enrollments WHERE student_id=? AND status='Enrolled'";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    @Override
+    public boolean hasPayments(String studentId) throws Exception {
+        String sql = "SELECT COUNT(*) FROM payments p JOIN enrollments e ON p.enrollment_id = e.enrollment_id WHERE e.student_id=?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
     private Student mapStudent(ResultSet rs) throws SQLException {
         Student s = new Student();
         s.setStudentId(rs.getString("student_id"));
@@ -102,6 +196,7 @@ public class StudentDAOImpl implements StudentDAO {
         s.setAddress(rs.getString("address"));
         Date d = rs.getDate("registration_date");
         if (d != null) s.setRegistrationDate(d.toLocalDate());
+        try { s.setActive(rs.getInt("active") == 1); } catch (SQLException ignored) {}
         return s;
     }
 }

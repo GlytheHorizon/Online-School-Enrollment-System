@@ -6,6 +6,7 @@ public class Course {
     private String courseName;
     private int units;
     private double tuitionPerUnit;
+    private boolean active = true;
 
     public Course() {}
 
@@ -26,6 +27,8 @@ public class Course {
     public void setUnits(int units) { this.units = units; }
     public double getTuitionPerUnit() { return tuitionPerUnit; }
     public void setTuitionPerUnit(double tuitionPerUnit) { this.tuitionPerUnit = tuitionPerUnit; }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
     public double getTotalTuition() {
         return units * tuitionPerUnit;

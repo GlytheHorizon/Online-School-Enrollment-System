@@ -4,16 +4,12 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.swing.text.PlainDocument;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
 import school.enrollment.controller.PaymentController;
 import school.enrollment.controller.EnrollmentController;
 import school.enrollment.controller.StudentController;
@@ -30,7 +26,6 @@ public class PaymentView extends JPanel {
     private JComboBox<String> cmbPaymentMethod;
     private JTextField txtAmount, txtReference, txtHistorySearch;
     private JLabel lblTotalBalance, lblTotalPaid, lblSelectedBalance;
-    private List<Enrollment> currentEnrollments = Collections.emptyList();
 
     public PaymentView() {
         paymentController = new PaymentController();
@@ -216,9 +211,16 @@ public class PaymentView extends JPanel {
             public boolean isCellEditable(int row, int col) { return false; }
         });
         UIHelper.styleTable(tblHistory);
+        tblHistory.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         TableRowSorter<TableModel> sorter = new TableRowSorter<>(tblHistory.getModel());
         tblHistory.setRowSorter(sorter);
         JLabel emptyHistory = UIHelper.createEmptyStateLabel("No payment history found.");
+
+        JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+        UIHelper.stylePanel(bottomBar);
+        JButton btnDeletePayment = UIHelper.createButton("Delete Record", UIHelper.DANGER);
+        btnDeletePayment.addActionListener(e -> deleteSelectedPayment());
+        bottomBar.add(btnDeletePayment);
 
         txtHistorySearch.addActionListener(e -> {
             searchPaymentHistory();
@@ -236,8 +238,30 @@ public class PaymentView extends JPanel {
 
         panel.add(searchPanel, BorderLayout.NORTH);
         panel.add(UIHelper.createTableWithOverlay(tblHistory, emptyHistory), BorderLayout.CENTER);
+        panel.add(bottomBar, BorderLayout.SOUTH);
         UIHelper.setEmptyStateVisible(tblHistory, emptyHistory);
         return panel;
+    }
+
+    private void deleteSelectedPayment() {
+        int row = tblHistory.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Please select a payment record to delete.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int modelRow = tblHistory.convertRowIndexToModel(row);
+        DefaultTableModel model = (DefaultTableModel) tblHistory.getModel();
+        String studentName = (String) model.getValueAt(modelRow, 0);
+        String amount = (String) model.getValueAt(modelRow, 1);
+        String method = (String) model.getValueAt(modelRow, 2);
+        String ref = (String) model.getValueAt(modelRow, 3);
+
+        int resultRow = paymentController.deletePaymentWithConfirmation(this, modelRow, studentName, amount, method, ref);
+        if (resultRow < 0) return;
+
+        paymentController.deletePaymentsByReference(ref);
+        loadPaymentHistory();
+        loadStudentEnrollments();
     }
 
     private void searchPaymentHistory() {
@@ -299,26 +323,35 @@ public class PaymentView extends JPanel {
             return;
         }
 
+        List<double[]> enrollmentPayments = new ArrayList<>();
         double remainingAmount = customAmount;
-        int payments = 0;
         for (int i = 0; i < studentEnrs.size(); i++) {
             Enrollment enrollment = studentEnrs.get(i);
             double eBal = enrollment.getTotalTuition() - enrollmentController.getTotalPaid(enrollment.getEnrollmentId());
             if (eBal <= 0) continue;
             double payAmt = i == studentEnrs.size() - 1 ? Math.round(remainingAmount * 100.0) / 100.0 : Math.min(eBal, Math.round((eBal / bal * customAmount) * 100.0) / 100.0);
             remainingAmount -= payAmt;
-            paymentController.makePayment(enrollment.getEnrollmentId(), payAmt, method, ref);
-            payments++;
+            enrollmentPayments.add(new double[]{enrollment.getEnrollmentId(), payAmt});
         }
 
-        if (payments > 0) {
-            JOptionPane.showMessageDialog(this, "Processed " + payments + " payment(s) successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            loadStudentEnrollments();
-            txtAmount.setText("");
-            txtReference.setText("");
-        } else {
+        if (enrollmentPayments.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No applicable balance found.", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
         }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Proceed with payment?\n\nStudent: " + studentId +
+            "\nAmount: P" + String.format("%.2f", customAmount) +
+            "\nMethod: " + method +
+            "\nReference: " + ref,
+            "Confirm Payment", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        String result = paymentController.processPayments(enrollmentPayments, method, ref);
+        JOptionPane.showMessageDialog(this, "Payments recorded:\n" + result, "Success", JOptionPane.INFORMATION_MESSAGE);
+        loadStudentEnrollments();
+        txtAmount.setText("");
+        txtReference.setText("");
     }
 
     private void updateSummary() {

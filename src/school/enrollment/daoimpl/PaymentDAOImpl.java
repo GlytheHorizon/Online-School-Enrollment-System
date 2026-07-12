@@ -61,7 +61,7 @@ public class PaymentDAOImpl implements PaymentDAO {
                      "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
                      "JOIN students s ON e.student_id = s.student_id " +
                      "JOIN courses c ON e.course_id = c.course_id " +
-                     "ORDER BY p.payment_date DESC";
+                      "WHERE s.active=1 ORDER BY p.payment_date DESC";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
@@ -97,7 +97,7 @@ public class PaymentDAOImpl implements PaymentDAO {
                      "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
                      "JOIN students s ON e.student_id = s.student_id " +
                      "JOIN courses c ON e.course_id = c.course_id " +
-                     "WHERE s.first_name LIKE ? OR s.last_name LIKE ? OR p.payment_method LIKE ? OR p.reference_number LIKE ? " +
+                      "WHERE s.active=1 AND (s.first_name LIKE ? OR s.last_name LIKE ? OR p.payment_method LIKE ? OR p.reference_number LIKE ?) " +
                      "ORDER BY p.payment_date DESC";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -138,6 +138,35 @@ public class PaymentDAOImpl implements PaymentDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapPayment(rs));
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public void deleteByReference(String referenceNumber) throws Exception {
+        String sql = "DELETE FROM payments WHERE reference_number=?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, referenceNumber);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
+    public List<Payment> getByReference(String referenceNumber) throws Exception {
+        List<Payment> list = new ArrayList<>();
+        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name " +
+                     "FROM payments p " +
+                     "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
+                     "JOIN students s ON e.student_id = s.student_id " +
+                     "JOIN courses c ON e.course_id = c.course_id " +
+                     "WHERE p.reference_number=? ORDER BY p.payment_date DESC";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, referenceNumber);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapPayment(rs));
             }

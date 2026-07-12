@@ -10,6 +10,7 @@ public class Student {
     private String phone;
     private String address;
     private LocalDate registrationDate;
+    private boolean active = true;
 
     public Student() {}
 
@@ -36,6 +37,8 @@ public class Student {
     public void setAddress(String address) { this.address = address; }
     public LocalDate getRegistrationDate() { return registrationDate; }
     public void setRegistrationDate(LocalDate registrationDate) { this.registrationDate = registrationDate; }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
     public String getFullName() {
         return firstName + " " + lastName;

@@ -10,6 +10,7 @@ import school.enrollment.dao.PaymentDAO;
 import school.enrollment.daoimpl.EnrollmentDAOImpl;
 import school.enrollment.daoimpl.EnrollmentAuditDAOImpl;
 import school.enrollment.daoimpl.PaymentDAOImpl;
+import school.enrollment.model.Course;
 import school.enrollment.model.Enrollment;
 import school.enrollment.model.EnrollmentAudit;
 
@@ -24,58 +25,77 @@ public class EnrollmentController {
         this.paymentDAO = new PaymentDAOImpl();
     }
 
-    public void enrollStudent(String studentId, int courseId) {
-        if (studentId == null || studentId.trim().isEmpty() || courseId <= 0) {
-            JOptionPane.showMessageDialog(null, "Please select a student and a course.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+    public void enrollStudent(String studentId, List<Course> courses) {
+        if (studentId == null || studentId.trim().isEmpty() || courses == null || courses.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Please select a student and at least one course.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        try {
-            if (enrollmentDAO.exists(studentId, courseId)) {
-                JOptionPane.showMessageDialog(null, "This student is already enrolled in that course.", "Duplicate Enrollment", JOptionPane.WARNING_MESSAGE);
-                return;
+        StringBuilder successMsg = new StringBuilder("Student enrolled successfully in:\n");
+        StringBuilder errorMsg = new StringBuilder();
+        int successCount = 0;
+        for (Course course : courses) {
+            int courseId = course.getCourseId();
+            try {
+                if (enrollmentDAO.exists(studentId, courseId)) {
+                    errorMsg.append("- ").append(course.getCourseCode()).append(": already enrolled\n");
+                    continue;
+                }
+                Enrollment e = new Enrollment();
+                e.setStudentId(studentId);
+                e.setCourseId(courseId);
+                e.setStatus("Enrolled");
+                enrollmentDAO.insert(e);
+
+                EnrollmentAudit audit = new EnrollmentAudit();
+                audit.setStudentId(studentId);
+                audit.setCourseId(courseId);
+                audit.setAction("ENROLLED");
+                auditDAO.insert(audit);
+
+                successMsg.append("- ").append(course.getCourseCode()).append(" (").append(course.getCourseName()).append(")\n");
+                successCount++;
+            } catch (Exception ex) {
+                errorMsg.append("- ").append(course.getCourseCode()).append(": ").append(ex.getMessage()).append("\n");
             }
-            Enrollment e = new Enrollment();
-            e.setStudentId(studentId);
-            e.setCourseId(courseId);
-            e.setStatus("Enrolled");
-            enrollmentDAO.insert(e);
-
-            EnrollmentAudit audit = new EnrollmentAudit();
-            audit.setStudentId(studentId);
-            audit.setCourseId(courseId);
-            audit.setAction("ENROLLED");
-            auditDAO.insert(audit);
-
-            JOptionPane.showMessageDialog(null, "Student enrolled successfully!\nEnrollment ID: " + e.getEnrollmentId(), "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(null, "Error enrolling student: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
+        StringBuilder fullMsg = new StringBuilder();
+        if (successCount > 0) {
+            fullMsg.append(successMsg);
+        }
+        if (errorMsg.length() > 0) {
+            if (successCount > 0) fullMsg.append("\n");
+            fullMsg.append("Issues:\n").append(errorMsg);
+        }
+        JOptionPane.showMessageDialog(null, fullMsg.toString(), successCount > 0 ? "Success" : "Errors", successCount > 0 ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
     }
 
-    public void cancelEnrollment(int enrollmentId) {
+    public void dropEnrollment(int enrollmentId) {
         if (enrollmentId <= 0) {
-            JOptionPane.showMessageDialog(null, "Please select an enrollment to cancel.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Please select an enrollment to drop.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        int confirm = JOptionPane.showConfirmDialog(null, "Cancel this enrollment?", "Confirm Cancel", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) return;
         try {
+            double paid = paymentDAO.getTotalPaid(enrollmentId);
+            if (paid > 0) {
+                JOptionPane.showMessageDialog(null, "Cannot drop this enrollment — payment has already been made (P" + String.format("%.2f", paid) + ").\nContact admin for refund/reimbursement.", "Payment Conflict", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             Enrollment e = enrollmentDAO.get(enrollmentId);
             if (e == null) {
                 JOptionPane.showMessageDialog(null, "Enrollment not found.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            enrollmentDAO.updateStatus(enrollmentId, "Cancelled");
+            enrollmentDAO.updateStatus(enrollmentId, "Dropped");
 
             EnrollmentAudit audit = new EnrollmentAudit();
             audit.setStudentId(e.getStudentId());
             audit.setCourseId(e.getCourseId());
-            audit.setAction("CANCELLED");
+            audit.setAction("DROPPED");
             auditDAO.insert(audit);
 
-            JOptionPane.showMessageDialog(null, "Enrollment cancelled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Enrollment dropped successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(null, "Error cancelling enrollment: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Error dropping enrollment: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

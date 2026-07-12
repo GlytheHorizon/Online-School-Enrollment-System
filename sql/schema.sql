@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS students (
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(20),
     address TEXT,
-    registration_date DATE DEFAULT (CURDATE())
+    registration_date DATE DEFAULT (CURDATE()),
+    active TINYINT(1) DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS courses (
@@ -16,7 +17,8 @@ CREATE TABLE IF NOT EXISTS courses (
     course_code VARCHAR(20) UNIQUE NOT NULL,
     course_name VARCHAR(100) NOT NULL,
     units INT NOT NULL,
-    tuition_per_unit DECIMAL(10,2) NOT NULL
+    tuition_per_unit DECIMAL(10,2) NOT NULL,
+    active TINYINT(1) DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS enrollments (

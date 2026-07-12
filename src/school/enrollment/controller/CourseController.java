@@ -59,18 +59,27 @@ public class CourseController {
         }
     }
 
-    public void deleteCourse(int courseId) {
+    public void deactivateCourse(int courseId) {
         if (courseId <= 0) {
-            JOptionPane.showMessageDialog(null, "Please select a course to delete.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Please select a course to deactivate.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        int confirm = JOptionPane.showConfirmDialog(null, "Are you sure you want to delete this course?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+        try {
+            if (courseDAO.hasActiveEnrollments(courseId)) {
+                JOptionPane.showMessageDialog(null, "Cannot deactivate this course — it has active enrollments.", "Enrollment Conflict", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error checking enrollments: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        int confirm = JOptionPane.showConfirmDialog(null, "Are you sure you want to deactivate this course?\nIt will be hidden from active lists.", "Confirm Deactivate", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
         try {
-            courseDAO.delete(courseId);
-            JOptionPane.showMessageDialog(null, "Course deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            courseDAO.deactivate(courseId);
+            JOptionPane.showMessageDialog(null, "Course deactivated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error deleting course: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Error deactivating course: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -78,7 +87,7 @@ public class CourseController {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
         try {
-            for (Course c : courseDAO.getAll()) {
+            for (Course c : courseDAO.getAllActive()) {
                 model.addRow(new Object[]{c.getCourseId(), c.getCourseCode(), c.getCourseName(), c.getUnits(), String.format("%.2f", c.getTuitionPerUnit()), String.format("%.2f", c.getTotalTuition())});
             }
         } catch (Exception e) {
@@ -90,7 +99,7 @@ public class CourseController {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
         try {
-            List<Course> list = keyword.trim().isEmpty() ? courseDAO.getAll() : courseDAO.search(keyword.trim());
+            List<Course> list = keyword.trim().isEmpty() ? courseDAO.getAllActive() : courseDAO.searchActive(keyword.trim());
             for (Course c : list) {
                 model.addRow(new Object[]{c.getCourseId(), c.getCourseCode(), c.getCourseName(), c.getUnits(), String.format("%.2f", c.getTuitionPerUnit()), String.format("%.2f", c.getTotalTuition())});
             }
@@ -101,7 +110,7 @@ public class CourseController {
 
     public List<Course> getAllCourses() {
         try {
-            return courseDAO.getAll();
+            return courseDAO.getAllActive();
         } catch (Exception e) {
             return List.of();
         }

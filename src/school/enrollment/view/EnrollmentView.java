@@ -143,9 +143,7 @@ public class EnrollmentView extends JPanel {
                 JOptionPane.showMessageDialog(this, "Select a student and one or more courses.", "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            for (Course c : new ArrayList<>(selectedCourses)) {
-                enrollmentController.enrollStudent(s.getStudentId(), c.getCourseId());
-            }
+            enrollmentController.enrollStudent(s.getStudentId(), new ArrayList<>(selectedCourses));
             selectedCourses.clear();
             updateCourseDropdownText();
             loadEnrollments(); loadAuditLog();
@@ -597,7 +595,7 @@ public class EnrollmentView extends JPanel {
         public ActionButtonRenderer() {
             setLayout(new FlowLayout(FlowLayout.CENTER, 0, 4));
             setOpaque(false);
-            button = new JButton("Cancel");
+            button = new JButton("Drop");
             button.setFont(UIHelper.MAIN_FONT.deriveFont(Font.BOLD, 11f));
             button.setForeground(Color.WHITE);
             button.setBackground(UIHelper.DANGER);
@@ -645,7 +643,7 @@ public class EnrollmentView extends JPanel {
             setClickCountToStart(1);
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 4));
             panel.setOpaque(true);
-            button = new JButton("Cancel");
+            button = new JButton("Drop");
             button.setFont(UIHelper.MAIN_FONT.deriveFont(Font.BOLD, 11f));
             button.setForeground(Color.WHITE);
             button.setBackground(UIHelper.DANGER);
@@ -658,13 +656,13 @@ public class EnrollmentView extends JPanel {
                 if (currentEnrollment != null) {
                     int confirm = JOptionPane.showConfirmDialog(
                         button.getParent(),
-                        "Are you sure you want to cancel the enrollment of " + currentEnrollment.getStudentName() + " in " + currentEnrollment.getCourseName() + "?",
-                        "Confirm Cancel Enrollment",
+                        "Drop " + currentEnrollment.getStudentName() + " from " + currentEnrollment.getCourseName() + "?",
+                        "Confirm Drop Enrollment",
                         JOptionPane.YES_NO_OPTION,
                         JOptionPane.WARNING_MESSAGE
                     );
                     if (confirm == JOptionPane.YES_OPTION) {
-                        enrollmentController.cancelEnrollment(currentEnrollment.getEnrollmentId());
+                        enrollmentController.dropEnrollment(currentEnrollment.getEnrollmentId());
                         loadEnrollments();
                         loadAuditLog();
                     }

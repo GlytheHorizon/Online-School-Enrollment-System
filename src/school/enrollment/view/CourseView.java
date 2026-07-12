@@ -56,7 +56,7 @@ public class CourseView extends JPanel {
         UIHelper.stylePanel(buttons);
         btnAdd = UIHelper.createButton("Add", UIHelper.SUCCESS);
         btnUpdate = UIHelper.createButton("Update", UIHelper.ACCENT);
-        btnDelete = UIHelper.createButton("Delete", new Color(192, 57, 43));
+        btnDelete = UIHelper.createButton("Deactivate", new Color(192, 57, 43));
         btnClear = UIHelper.createGhostButton("Clear");
 
         btnUpdate.setVisible(false);
@@ -86,10 +86,10 @@ public class CourseView extends JPanel {
         });
         btnDelete.addActionListener(e -> {
             if (selectedCourseId <= 0) {
-                JOptionPane.showMessageDialog(this, "Select a course to delete.", "No Selection", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Select a course to deactivate.", "No Selection", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            controller.deleteCourse(selectedCourseId);
+            controller.deactivateCourse(selectedCourseId);
             clearForm(); controller.loadCourses(tblCourses);
         });
         btnClear.addActionListener(e -> clearForm());

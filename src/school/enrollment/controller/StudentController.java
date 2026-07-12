@@ -60,18 +60,28 @@ public class StudentController {
         }
     }
 
-    public void deleteStudent(String studentId) {
+    public void deactivateStudent(String studentId) {
         if (studentId == null || studentId.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(null, "Please select a student to delete.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Please select a student to deactivate.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        int confirm = JOptionPane.showConfirmDialog(null, "Are you sure you want to delete this student?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) return;
         try {
-            studentDAO.delete(studentId);
-            JOptionPane.showMessageDialog(null, "Student deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            boolean hasEnrollments = studentDAO.hasActiveEnrollments(studentId);
+            boolean hasPayments = studentDAO.hasPayments(studentId);
+            StringBuilder msg = new StringBuilder("Are you sure you want to deactivate this student?\nIt will be hidden from active lists.");
+            if (hasEnrollments || hasPayments) {
+                msg = new StringBuilder("This student has ");
+                if (hasEnrollments) msg.append("active enrollments");
+                if (hasEnrollments && hasPayments) msg.append(" and ");
+                if (hasPayments) msg.append("payment records");
+                msg.append(".\nDeactivating will keep historical data but hide them from active lists.\nContinue?");
+            }
+            int confirm = JOptionPane.showConfirmDialog(null, msg.toString(), "Confirm Deactivate", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (confirm != JOptionPane.YES_OPTION) return;
+            studentDAO.deactivate(studentId);
+            JOptionPane.showMessageDialog(null, "Student deactivated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error deleting student: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Error deactivating student: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -79,7 +89,7 @@ public class StudentController {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
         try {
-            for (Student s : studentDAO.getAll()) {
+            for (Student s : studentDAO.getAllActive()) {
                 model.addRow(new Object[]{s.getStudentId(), s.getFirstName(), s.getLastName(), s.getEmail(), s.getPhone(), s.getAddress()});
             }
         } catch (Exception e) {
@@ -91,12 +101,49 @@ public class StudentController {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
         try {
-            List<Student> list = keyword.trim().isEmpty() ? studentDAO.getAll() : studentDAO.search(keyword.trim());
+            List<Student> list = keyword.trim().isEmpty() ? studentDAO.getAllActive() : studentDAO.searchActive(keyword.trim());
             for (Student s : list) {
                 model.addRow(new Object[]{s.getStudentId(), s.getFirstName(), s.getLastName(), s.getEmail(), s.getPhone(), s.getAddress()});
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error searching students: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void loadInactiveStudents(JTable table) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.setRowCount(0);
+        try {
+            for (Student s : studentDAO.getAllInactive()) {
+                model.addRow(new Object[]{s.getStudentId(), s.getFirstName(), s.getLastName(), s.getEmail(), s.getPhone(), s.getAddress()});
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error loading archived students: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void searchInactiveStudents(JTable table, String keyword) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.setRowCount(0);
+        try {
+            List<Student> list = keyword.trim().isEmpty() ? studentDAO.getAllInactive() : studentDAO.searchInactive(keyword.trim());
+            for (Student s : list) {
+                model.addRow(new Object[]{s.getStudentId(), s.getFirstName(), s.getLastName(), s.getEmail(), s.getPhone(), s.getAddress()});
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error searching archived students: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void reactivateStudent(String studentId) {
+        if (studentId == null || studentId.trim().isEmpty()) return;
+        int confirm = JOptionPane.showConfirmDialog(null, "Reactivate this student?\nThey will appear in active lists again.", "Confirm Reactivate", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+        try {
+            studentDAO.reactivate(studentId);
+            JOptionPane.showMessageDialog(null, "Student reactivated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error reactivating student: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -110,7 +157,7 @@ public class StudentController {
 
     public List<Student> getAllStudents() {
         try {
-            return studentDAO.getAll();
+            return studentDAO.getAllActive();
         } catch (Exception e) {
             return List.of();
         }

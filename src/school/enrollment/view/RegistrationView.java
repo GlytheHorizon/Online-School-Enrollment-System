@@ -21,12 +21,11 @@ public class RegistrationView extends JPanel {
     private JTextField txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone, txtAddress;
     private JTable tblStudents;
     private JTextField txtSearch;
-    private String selectedStudentId;
+    private boolean showArchived = false;
 
     public RegistrationView() {
         controller = new StudentController();
         enrollmentController = new EnrollmentController();
-        selectedStudentId = null;
         UIHelper.stylePanel(this);
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -135,7 +134,7 @@ public class RegistrationView extends JPanel {
                 UIHelper.getCleanText(txtEmail),
                 UIHelper.getCleanText(txtPhone),
                 UIHelper.getCleanText(txtAddress));
-            clearForm(); controller.loadStudents(tblStudents);
+            clearForm(); loadStudentTable();
         });
         btnClear.addActionListener(e -> clearForm());
 
@@ -162,8 +161,31 @@ public class RegistrationView extends JPanel {
         UIHelper.setPlaceholder(txtSearch, "Search students...");
         searchPanel.add(txtSearch, BorderLayout.CENTER);
 
+        JLabel emptyStudents = UIHelper.createEmptyStateLabel("No students found.");
+
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         UIHelper.stylePanel(btnPanel);
+        Color archiveColor = new Color(139, 92, 246);
+        Color activeColor = new Color(22, 163, 74);
+        JLabel lblListType = new JLabel("Active List");
+        lblListType.setFont(UIHelper.MAIN_FONT.deriveFont(Font.BOLD, 14f));
+        lblListType.setForeground(activeColor);
+        lblListType.setHorizontalAlignment(SwingConstants.CENTER);
+        JButton btnArchive = UIHelper.createOutlineButton("Show Archived", archiveColor);
+        btnArchive.addActionListener(e -> {
+            showArchived = !showArchived;
+            btnArchive.setText(showArchived ? "Show Active" : "Show Archived");
+            Color c = showArchived ? activeColor : archiveColor;
+            btnArchive.setForeground(c);
+            btnArchive.setBorder(BorderFactory.createCompoundBorder(
+                UIHelper.createRoundedBorder(14, c),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)));
+            lblListType.setText(showArchived ? "Archive List" : "Active List");
+            lblListType.setForeground(showArchived ? archiveColor : activeColor);
+            emptyStudents.setText(showArchived ? "No archived students." : "No students found.");
+            loadStudentTable();
+            UIHelper.setEmptyStateVisible(tblStudents, emptyStudents);
+        });
         JButton btnSearch = UIHelper.createSecondaryButton("Search");
         JButton btnRefresh = UIHelper.createGhostButton("Refresh");
         tblStudents = new JTable(new DefaultTableModel(new Object[]{"Student ID", "First Name", "Last Name", "Email", "Phone", "Address"}, 0) {
@@ -171,19 +193,30 @@ public class RegistrationView extends JPanel {
         });
         tblStudents.setRowHeight(40);
         UIHelper.styleTable(tblStudents);
-        JLabel emptyStudents = UIHelper.createEmptyStateLabel("No students found.");
         txtSearch.addActionListener(e -> {
-            controller.searchStudents(tblStudents, UIHelper.getCleanText(txtSearch));
+            searchStudentTable();
             UIHelper.setEmptyStateVisible(tblStudents, emptyStudents);
         });
         btnSearch.addActionListener(e -> {
-            controller.searchStudents(tblStudents, UIHelper.getCleanText(txtSearch));
+            searchStudentTable();
             UIHelper.setEmptyStateVisible(tblStudents, emptyStudents);
         });
-        btnRefresh.addActionListener(e -> { txtSearch.setText(""); controller.loadStudents(tblStudents); UIHelper.setEmptyStateVisible(tblStudents, emptyStudents); });
+        btnRefresh.addActionListener(e -> { txtSearch.setText(""); loadStudentTable(); UIHelper.setEmptyStateVisible(tblStudents, emptyStudents); });
+        btnPanel.add(btnArchive);
         btnPanel.add(btnSearch);
         btnPanel.add(btnRefresh);
         searchPanel.add(btnPanel, BorderLayout.EAST);
+
+        JPanel listTypeRow = new JPanel(new BorderLayout());
+        listTypeRow.setOpaque(false);
+        listTypeRow.add(lblListType, BorderLayout.CENTER);
+        listTypeRow.setBorder(BorderFactory.createEmptyBorder(2, 0, 4, 0));
+
+        JPanel topSection = new JPanel(new BorderLayout());
+        topSection.setOpaque(false);
+        topSection.add(searchPanel, BorderLayout.NORTH);
+        topSection.add(listTypeRow, BorderLayout.SOUTH);
+
         tblStudents.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -193,12 +226,29 @@ public class RegistrationView extends JPanel {
                 }
             }
         });
-        controller.loadStudents(tblStudents);
+        loadStudentTable();
         UIHelper.setEmptyStateVisible(tblStudents, emptyStudents);
 
-        panel.add(searchPanel, BorderLayout.NORTH);
+        panel.add(topSection, BorderLayout.NORTH);
         panel.add(UIHelper.createTableWithOverlay(tblStudents, emptyStudents), BorderLayout.CENTER);
         return panel;
+    }
+
+    private void loadStudentTable() {
+        if (showArchived) {
+            controller.loadInactiveStudents(tblStudents);
+        } else {
+            controller.loadStudents(tblStudents);
+        }
+    }
+
+    private void searchStudentTable() {
+        String kw = UIHelper.getCleanText(txtSearch);
+        if (showArchived) {
+            controller.searchInactiveStudents(tblStudents, kw);
+        } else {
+            controller.searchStudents(tblStudents, kw);
+        }
     }
 
     private void clearForm() {
@@ -210,7 +260,6 @@ public class RegistrationView extends JPanel {
         txtAddress.setText("Street, City, Province");
         for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone, txtAddress})
             f.setForeground(Color.GRAY);
-        selectedStudentId = null;
         tblStudents.clearSelection();
     }
 
@@ -220,7 +269,7 @@ public class RegistrationView extends JPanel {
         Student student = controller.getStudent(studentId);
         if (student != null) {
             new StudentDetailsDialog(student).setVisible(true);
-            controller.loadStudents(tblStudents);
+            loadStudentTable();
         }
     }
 
@@ -237,6 +286,7 @@ public class RegistrationView extends JPanel {
         private final JButton btnCancel;
 
         private final Student student;
+        private final JButton btnRestore;
 
         public StudentDetailsDialog(Student student) {
             super(SwingUtilities.getWindowAncestor(RegistrationView.this), "Student Details", ModalityType.APPLICATION_MODAL);
@@ -305,26 +355,36 @@ public class RegistrationView extends JPanel {
             coursesPanel.add(courseScroll, BorderLayout.CENTER);
 
             List<Enrollment> enrollments = enrollmentController.getEnrollmentsByStudent(student.getStudentId());
-            for (Enrollment e : enrollments) {
-                double paid = enrollmentController.getTotalPaid(e.getEnrollmentId());
-                double bal = Math.max(0, e.getTotalTuition() - paid);
-                ((DefaultTableModel) courseTable.getModel()).addRow(new Object[]{e.getCourseCode(), e.getCourseName(), e.getUnits(), String.format("%.2f", e.getTotalTuition()), String.format("%.2f", paid), String.format("%.2f", bal)});
+            DefaultTableModel courseModel = (DefaultTableModel) courseTable.getModel();
+            if (enrollments.isEmpty()) {
+                courseModel.addRow(new Object[]{"", "No enrolled courses", "", "", "", ""});
+            } else {
+                for (Enrollment e : enrollments) {
+                    double paid = enrollmentController.getTotalPaid(e.getEnrollmentId());
+                    double bal = Math.max(0, e.getTotalTuition() - paid);
+                    courseModel.addRow(new Object[]{e.getCourseCode(), e.getCourseName(), e.getUnits(), String.format("%.2f", e.getTotalTuition()), String.format("%.2f", paid), String.format("%.2f", bal)});
+                }
             }
 
-            btnDelete = UIHelper.createButton("Delete", new Color(192, 57, 43));
+            btnDelete = UIHelper.createButton("Deactivate", new Color(192, 57, 43));
+            btnRestore = UIHelper.createButton("Reactivate", UIHelper.SUCCESS);
             btnEdit = UIHelper.createSecondaryButton("Edit");
             btnSave = UIHelper.createButton("Save", new Color(22, 163, 74));
             btnCancel = UIHelper.createSecondaryButton("Cancel");
 
             btnSave.setVisible(false);
             btnCancel.setVisible(false);
+            btnRestore.setVisible(false);
+
+            btnRestore.addActionListener(e -> {
+                controller.reactivateStudent(student.getStudentId());
+                dispose();
+            });
 
             btnEdit.addActionListener(e -> setEditMode(true));
             btnDelete.addActionListener(e -> {
-                if (JOptionPane.showConfirmDialog(this, "Delete student " + student.getStudentId() + "?", "Confirm Delete", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                    controller.deleteStudent(student.getStudentId());
-                    dispose();
-                }
+                controller.deactivateStudent(student.getStudentId());
+                dispose();
             });
             btnSave.addActionListener(e -> {
                 controller.updateStudent(
@@ -369,7 +429,13 @@ public class RegistrationView extends JPanel {
 
             JPanel deleteBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
             deleteBar.setOpaque(false);
-            deleteBar.add(btnDelete);
+            if (!student.isActive()) {
+                btnDelete.setVisible(false);
+                btnRestore.setVisible(true);
+                deleteBar.add(btnRestore);
+            } else {
+                deleteBar.add(btnDelete);
+            }
 
             JPanel bottomWrapper = new JPanel(new BorderLayout(8, 8));
             bottomWrapper.setOpaque(false);

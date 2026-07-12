@@ -1,6 +1,7 @@
 package school.enrollment.view;
 
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 
@@ -10,6 +11,7 @@ public class MainView extends JFrame {
     private EnrollmentView enrollmentView;
     private PaymentView paymentView;
     private InfoView infoView;
+    private boolean fullscreen = false;
 
     public MainView() {
         setTitle("Online School Enrollment System");
@@ -17,6 +19,16 @@ public class MainView extends JFrame {
         setSize(1200, 820);
         setLocationRelativeTo(null);
         setIconImage(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        fullscreen = true;
+
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
+            if (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_F11) {
+                toggleFullscreen();
+                return true;
+            }
+            return false;
+        });
 
         try {
             UIManager.put("TabbedPane.font", new Font("Segoe UI", Font.BOLD, 13));
@@ -66,21 +78,11 @@ public class MainView extends JFrame {
         paymentView = new PaymentView();
         infoView = new InfoView();
 
-        JScrollPane regScroll = new JScrollPane(registrationView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        JScrollPane courseScroll = new JScrollPane(courseView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        JScrollPane enrollScroll = new JScrollPane(enrollmentView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        JScrollPane paymentScroll = new JScrollPane(paymentView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        JScrollPane infoScroll = new JScrollPane(infoView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        UIHelper.styleScrollPane(regScroll);
-        UIHelper.styleScrollPane(courseScroll);
-        UIHelper.styleScrollPane(enrollScroll);
-        UIHelper.styleScrollPane(paymentScroll);
-        UIHelper.styleScrollPane(infoScroll);
+        JScrollPane regScroll = createScrollPane(registrationView);
+        JScrollPane courseScroll = createScrollPane(courseView);
+        JScrollPane enrollScroll = createScrollPane(enrollmentView);
+        JScrollPane paymentScroll = createScrollPane(paymentView);
+        JScrollPane infoScroll = createScrollPane(infoView);
 
         tabs.addTab("  Student Registration  ", regScroll);
         tabs.addTab("  Course Management  ", courseScroll);
@@ -105,12 +107,31 @@ public class MainView extends JFrame {
         JPanel statusBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 3));
         statusBar.setBackground(new Color(30, 41, 59));
         JLabel statusLabel = new JLabel(
-                "  Online School Enrollment System v2.0  |  MVC + DAO Architecture  |  Group 2");
+                "  Online School Enrollment System v4.0  |  MVC + DAO Architecture  |  Group 2");
         statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         statusLabel.setForeground(Color.WHITE);
         statusBar.add(statusLabel);
         root.add(statusBar, BorderLayout.SOUTH);
 
         setContentPane(root);
+    }
+
+    private JScrollPane createScrollPane(Component view) {
+        JScrollPane sp = new JScrollPane(view, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sp.getVerticalScrollBar().setUnitIncrement(24);
+        UIHelper.styleScrollPane(sp);
+        return sp;
+    }
+
+    private void toggleFullscreen() {
+        fullscreen = !fullscreen;
+        if (fullscreen) {
+            setExtendedState(JFrame.MAXIMIZED_BOTH);
+        } else {
+            setExtendedState(JFrame.NORMAL);
+            setSize(1200, 820);
+            setLocationRelativeTo(null);
+        }
     }
 }
