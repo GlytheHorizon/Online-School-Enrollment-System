@@ -7,6 +7,10 @@ CREATE TABLE IF NOT EXISTS students (
     last_name VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(20),
+    birth_date DATE,
+    birth_place VARCHAR(100),
+    civil_status VARCHAR(20),
+    sex VARCHAR(10),
     address TEXT,
     registration_date DATE DEFAULT (CURDATE()),
     active TINYINT(1) DEFAULT 1

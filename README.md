@@ -91,15 +91,9 @@ activity15/
 1. Open MySQL command line or any MySQL client (e.g., MySQL Workbench, phpMyAdmin)
 2. Run the schema script:
    ```
-   source C:\Apache24\htdocs\TESDA\activity15\sql\schema.sql
+   source sql/schema.sql
    ```
-   Or copy and paste the contents of `sql/schema.sql` into your MySQL client.
-
-### If you already ran the schema before the Active/Inactive update, run:
-```sql
-ALTER TABLE students ADD COLUMN active TINYINT(1) DEFAULT 1;
-ALTER TABLE courses ADD COLUMN active TINYINT(1) DEFAULT 1;
-```
+    Or copy and paste the contents of `sql/schema.sql` into your MySQL client.
 
 ## Configure Database Connection
 
@@ -113,17 +107,29 @@ private static final String PASSWORD = "";  // change if needed
 
 ## How to Run
 
-### Compile (PowerShell):
-```powershell
-javac -d build -cp "lib\*" src\school\enrollment\*.java src\school\enrollment\model\*.java src\school\enrollment\dao\*.java src\school\enrollment\daoimpl\*.java src\school\enrollment\database\*.java src\school\enrollment\controller\*.java src\school\enrollment\view\*.java src\school\enrollment\theme\*.java
+### Option 1 — Using the batch scripts (Windows):
+
+```cmd
+build       # compiles all sources into build/
+run         # runs the application
 ```
 
-### Run:
-```powershell
+### Option 2 — Command Prompt (cmd.exe):
+
+```cmd
+javac -d build -cp "lib\*" @sources.txt
 java -cp "build;lib\*" school.enrollment.Main
 ```
 
-> **Note:** On Windows, use `;` as path separator. On Linux/Mac, use `:` instead.
+### Option 3 — PowerShell:
+
+```powershell
+javac -d build -cp "lib\*" src\school\enrollment\*.java src\school\enrollment\model\*.java src\school\enrollment\dao\*.java src\school\enrollment\daoimpl\*.java src\school\enrollment\database\*.java src\school\enrollment\controller\*.java src\school\enrollment\view\*.java src\school\enrollment\theme\*.java
+
+java -cp "build;lib\*" school.enrollment.Main
+```
+
+> **Note:** On Windows classpath uses `;`, on Linux/Mac use `:` instead.
 
 ### VS Code Setup
 

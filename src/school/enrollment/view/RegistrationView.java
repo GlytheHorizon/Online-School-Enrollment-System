@@ -1,6 +1,8 @@
 package school.enrollment.view;
 
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
@@ -134,14 +136,69 @@ public class RegistrationView extends JPanel {
             }
         });
 
+        // Birth Date: MM/DD/YYYY auto-format
+        ((PlainDocument) txtBirthDate.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            private String fmt(String d) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < d.length(); i++) {
+                    char c = d.charAt(i);
+                    if (i == 0 && (c < '0' || c > '1')) continue;
+                    if (i == 1) {
+                        char t = d.charAt(0);
+                        if (t == '0' && (c < '1' || c > '9')) continue;
+                        if (t == '1' && (c < '0' || c > '2')) continue;
+                        if (t < '0' || t > '1') continue;
+                    }
+                    if (i == 2 && (c < '0' || c > '3')) continue;
+                    if (i == 3) {
+                        char t = d.charAt(2);
+                        if (t >= '0' && t <= '2' && (c < '0' || c > '9')) continue;
+                        if (t == '3' && (c < '0' || c > '1')) continue;
+                        if (t < '0' || t > '3') continue;
+                    }
+                    if (i >= 4 && i <= 7 && (c < '0' || c > '9')) continue;
+                    if (i > 7) continue;
+                    if (i == 2 || i == 4) sb.append('/');
+                    sb.append(c);
+                }
+                return sb.toString();
+            }
+            public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
+                String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String ns = (cur.substring(0, offs) + str + cur.substring(offs)).replaceAll("[^\\d]", "");
+                if (ns.length() > 8) return;
+                fb.replace(0, cur.length(), fmt(ns), a);
+            }
+            public void replace(FilterBypass fb, int offs, int len, String str, AttributeSet a) throws BadLocationException {
+                if (str == null) { fb.replace(offs, len, null, a); return; }
+                String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String ns = (cur.substring(0, offs) + str + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                if (ns.length() > 8) return;
+                fb.replace(0, cur.length(), fmt(ns), a);
+            }
+            public void remove(FilterBypass fb, int offs, int len) throws BadLocationException {
+                String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String ns = (cur.substring(0, offs) + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                fb.replace(0, cur.length(), fmt(ns), null);
+            }
+        });
+
         UIHelper.setPlaceholder(txtStudentId,  "2024-0001");
         UIHelper.setPlaceholder(txtFirstName,  "e.g., Juan");
         UIHelper.setPlaceholder(txtLastName,   "e.g., Dela Cruz");
         UIHelper.setPlaceholder(txtEmail,      "email@example.com");
         UIHelper.setPlaceholder(txtPhone,      "09XXXXXXXXX");
-        UIHelper.setPlaceholder(txtBirthDate,  "MM/DD/YYYY");
+        txtBirthDate.setForeground(Color.GRAY);
+        txtBirthDate.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) { txtBirthDate.setForeground(Color.BLACK); }
+            public void focusLost(FocusEvent e) {
+                txtBirthDate.setForeground(txtBirthDate.getText().isEmpty() ? Color.GRAY : Color.BLACK);
+            }
+        });
         UIHelper.setPlaceholder(txtBirthPlace, "e.g., Manila");
         UIHelper.setPlaceholder(txtAddress,    "Street, City, Province");
+        UIHelper.setComboPlaceholder(cmbCivilStatus, "Select Civil Status");
+        UIHelper.setComboPlaceholder(cmbSex, "Select Sex");
 
         fields.add(UIHelper.createLabeledField("Student ID*",   txtStudentId));
         fields.add(UIHelper.createLabeledField("First Name*",   txtFirstName));
@@ -421,6 +478,53 @@ public class RegistrationView extends JPanel {
                     String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
                     String ns = (cur.substring(0, offs) + cur.substring(offs + len)).replaceAll("[^\\d]", "");
                     fb.replace(0, cur.length(), ns, null);
+                }
+            });
+
+            // Birth Date: MM/DD/YYYY auto-format
+            ((PlainDocument) fBirthDate.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+                private String fmt(String d) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < d.length(); i++) {
+                        char c = d.charAt(i);
+                        if (i == 0 && (c < '0' || c > '1')) continue;
+                        if (i == 1) {
+                            char t = d.charAt(0);
+                            if (t == '0' && (c < '1' || c > '9')) continue;
+                            if (t == '1' && (c < '0' || c > '2')) continue;
+                            if (t < '0' || t > '1') continue;
+                        }
+                        if (i == 2 && (c < '0' || c > '3')) continue;
+                        if (i == 3) {
+                            char t = d.charAt(2);
+                            if (t >= '0' && t <= '2' && (c < '0' || c > '9')) continue;
+                            if (t == '3' && (c < '0' || c > '1')) continue;
+                            if (t < '0' || t > '3') continue;
+                        }
+                        if (i >= 4 && i <= 7 && (c < '0' || c > '9')) continue;
+                        if (i > 7) continue;
+                        if (i == 2 || i == 4) sb.append('/');
+                        sb.append(c);
+                    }
+                    return sb.toString();
+                }
+                public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
+                    String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                    String ns = (cur.substring(0, offs) + str + cur.substring(offs)).replaceAll("[^\\d]", "");
+                    if (ns.length() > 8) return;
+                    fb.replace(0, cur.length(), fmt(ns), a);
+                }
+                public void replace(FilterBypass fb, int offs, int len, String str, AttributeSet a) throws BadLocationException {
+                    if (str == null) { fb.replace(offs, len, null, a); return; }
+                    String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                    String ns = (cur.substring(0, offs) + str + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                    if (ns.length() > 8) return;
+                    fb.replace(0, cur.length(), fmt(ns), a);
+                }
+                public void remove(FilterBypass fb, int offs, int len) throws BadLocationException {
+                    String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                    String ns = (cur.substring(0, offs) + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                    fb.replace(0, cur.length(), fmt(ns), null);
                 }
             });
 
