@@ -169,6 +169,14 @@ public class EnrollmentController {
         }
     }
 
+    public Enrollment getEnrollment(int enrollmentId) {
+        try {
+            return enrollmentDAO.get(enrollmentId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public List<Enrollment> getEnrollmentsByStudent(String studentId) {
         try {
             return enrollmentDAO.getByStudent(studentId);

@@ -15,7 +15,7 @@ public class PaymentController {
         this.paymentDAO = new PaymentDAOImpl();
     }
 
-    public void makePayment(int enrollmentId, double amount, String paymentMethod, String transactionId) {
+    public void makePayment(int enrollmentId, double amount, double excess, String paymentMethod, String transactionId) {
         if (enrollmentId <= 0) {
             JOptionPane.showMessageDialog(null, "Please select an enrollment.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
@@ -33,6 +33,7 @@ public class PaymentController {
             Payment p = new Payment();
             p.setEnrollmentId(enrollmentId);
             p.setAmount(amount);
+            p.setExcessAmount(excess);
             p.setPaymentMethod(paymentMethod.trim());
             p.setReferenceNumber(transactionId);
             paymentDAO.insert(p);
@@ -63,6 +64,7 @@ public class PaymentController {
             if (grouped.containsKey(key)) {
                 Payment existing = grouped.get(key);
                 existing.setAmount(existing.getAmount() + p.getAmount());
+                existing.setExcessAmount(existing.getExcessAmount() + p.getExcessAmount());
             } else {
                 Payment clone = new Payment();
                 clone.setPaymentId(p.getPaymentId());
@@ -73,6 +75,7 @@ public class PaymentController {
                 clone.setPaymentMethod(p.getPaymentMethod());
                 clone.setPaymentDate(p.getPaymentDate());
                 clone.setAmount(p.getAmount());
+                clone.setExcessAmount(p.getExcessAmount());
                 grouped.put(key, clone);
             }
         }
@@ -89,6 +92,7 @@ public class PaymentController {
                     p.getStudentId(),
                     p.getStudentName(),
                     String.format("%.2f", p.getAmount()),
+                    String.format("%.2f", p.getExcessAmount()),
                     p.getPaymentMethod(),
                     p.getReferenceNumber(),
                     p.getPaymentDate() != null ? p.getPaymentDate().toString() : ""
@@ -96,6 +100,14 @@ public class PaymentController {
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error loading payments: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public List<Payment> getAllPayments() {
+        try {
+            return paymentDAO.getAll();
+        } catch (Exception e) {
+            return List.of();
         }
     }
 
@@ -118,6 +130,7 @@ public class PaymentController {
                     p.getStudentId(),
                     p.getStudentName(),
                     String.format("%.2f", p.getAmount()),
+                    String.format("%.2f", p.getExcessAmount()),
                     p.getPaymentMethod(),
                     p.getReferenceNumber(),
                     p.getPaymentDate() != null ? p.getPaymentDate().toString() : ""

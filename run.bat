@@ -13,5 +13,3 @@ pause >nul
 java -cp "build;lib\*" school.enrollment.Main
 echo.
 echo   ============================================
-echo   Application closed.
-pause >nul

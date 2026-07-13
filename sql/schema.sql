@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_id INT AUTO_INCREMENT PRIMARY KEY,
     enrollment_id INT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
+    excess DECIMAL(10,2) DEFAULT 0.00,
     payment_method VARCHAR(20) NOT NULL,
     payment_date DATE DEFAULT (CURDATE()),
     reference_number VARCHAR(50),
@@ -61,3 +62,5 @@ INSERT INTO courses (course_code, course_name, units, tuition_per_unit) VALUES
 ('CS201', 'Database Systems', 3, 2000.00),
 ('MATH101', 'Calculus I', 3, 1200.00),
 ('ENG101', 'English Composition', 3, 1000.00);
+
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS excess DECIMAL(10,2) DEFAULT 0.00 AFTER amount;

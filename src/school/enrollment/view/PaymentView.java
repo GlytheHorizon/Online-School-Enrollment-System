@@ -9,14 +9,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
-import javax.swing.text.PlainDocument;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
 import school.enrollment.controller.PaymentController;
 import school.enrollment.controller.EnrollmentController;
 import school.enrollment.controller.StudentController;
@@ -34,6 +28,7 @@ public class PaymentView extends JPanel {
     private JTextField txtAmount, txtHistorySearch;
     private JLabel lblTotalBalance, lblTotalPaid, lblSelectedBalance;
     private List<Enrollment> currentEnrollments = Collections.emptyList();
+    private List<PaymentGroup> paymentGroups = new ArrayList<>();
 
     public PaymentView() {
         paymentController = new PaymentController();
@@ -88,7 +83,7 @@ public class PaymentView extends JPanel {
         panel.setBorder(UIHelper.createBorder("Tuition Balance Summaries"));
         UIHelper.stylePanel(panel);
 
-        String[] cols = {"Student ID", "Student Name", "Total Tuition", "Payment Made", "Balance Left"};
+        String[] cols = {"Student ID", "Student Name", "Total Tuition", "Payment Made", "Excess", "Balance Left"};
         tblEnrollments = new JTable(new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int row, int col) { return false; }
         });
@@ -102,7 +97,7 @@ public class PaymentView extends JPanel {
                 int[] selectedRows = tblEnrollments.getSelectedRows();
                 for (int viewRow : selectedRows) {
                     int modelRow = tblEnrollments.convertRowIndexToModel(viewRow);
-                    double bal = Double.parseDouble(((String) model.getValueAt(modelRow, 4)).replace(",", ""));
+                    double bal = Double.parseDouble(((String) model.getValueAt(modelRow, 5)).replace(",", ""));
                     if (bal <= 0) {
                         tblEnrollments.removeRowSelectionInterval(viewRow, viewRow);
                     }
@@ -117,7 +112,7 @@ public class PaymentView extends JPanel {
                 if (viewRow >= 0) {
                     int modelRow = tblEnrollments.convertRowIndexToModel(viewRow);
                     DefaultTableModel model = (DefaultTableModel) tblEnrollments.getModel();
-                    double bal = Double.parseDouble(((String) model.getValueAt(modelRow, 4)).replace(",", ""));
+                    double bal = Double.parseDouble(((String) model.getValueAt(modelRow, 5)).replace(",", ""));
                     if (bal <= 0) {
                         tblEnrollments.clearSelection();
                         e.consume();
@@ -210,13 +205,31 @@ public class PaymentView extends JPanel {
         btnPanel.add(btnRefresh);
         searchPanel.add(btnPanel, BorderLayout.EAST);
 
-        String[] cols = {"Student ID", "Name", "Payment", "Method", "Transaction ID", "Date"};
+        String[] cols = {"", "Student ID", "Name", "Amount to Pay", "Payment", "Change", "Method", "Transaction ID", "Date"};
         tblHistory = new JTable(new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int row, int col) { return false; }
         });
         UIHelper.styleTable(tblHistory);
-        TableRowSorter<TableModel> sorter = new TableRowSorter<>(tblHistory.getModel());
-        tblHistory.setRowSorter(sorter);
+        tblHistory.getColumnModel().getColumn(0).setPreferredWidth(30);
+        tblHistory.getColumnModel().getColumn(0).setMaxWidth(30);
+        tblHistory.setDefaultRenderer(Object.class, new HistoryCellRenderer());
+        tblHistory.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = tblHistory.rowAtPoint(e.getPoint());
+                int col = tblHistory.columnAtPoint(e.getPoint());
+                if (row >= 0) {
+                    Object val = tblHistory.getValueAt(row, 0);
+                    if (val instanceof PaymentGroup) {
+                        PaymentGroup g = (PaymentGroup) val;
+                        if (col == 0 || e.getClickCount() == 2) {
+                            g.expanded = !g.expanded;
+                            rebuildHistoryTable();
+                        }
+                    }
+                }
+            }
+        });
         JLabel emptyHistory = UIHelper.createEmptyStateLabel("No payment history found.");
 
         txtHistorySearch.addActionListener(e -> {
@@ -240,13 +253,18 @@ public class PaymentView extends JPanel {
     }
 
     private void searchPaymentHistory() {
-        DefaultRowSorter<?, ?> sorter = (DefaultRowSorter<?, ?>) tblHistory.getRowSorter();
-        String kw = UIHelper.getCleanText(txtHistorySearch);
+        String kw = UIHelper.getCleanText(txtHistorySearch).toLowerCase();
         if (kw.isEmpty()) {
-            sorter.setRowFilter(null);
+            for (PaymentGroup g : paymentGroups) g.visible = true;
         } else {
-            sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(kw)));
+            for (PaymentGroup g : paymentGroups) {
+                g.visible = g.aggregated.getStudentName().toLowerCase().contains(kw)
+                    || g.aggregated.getStudentId().toLowerCase().contains(kw)
+                    || g.aggregated.getReferenceNumber() != null && g.aggregated.getReferenceNumber().toLowerCase().contains(kw)
+                    || g.aggregated.getPaymentMethod().toLowerCase().contains(kw);
+            }
         }
+        rebuildHistoryTable();
     }
 
     private static String generateTransactionId() {
@@ -265,7 +283,7 @@ public class PaymentView extends JPanel {
         int row = selectedRows[0];
         DefaultTableModel model = (DefaultTableModel) tblEnrollments.getModel();
         String studentId = (String) model.getValueAt(row, 0);
-        double bal = Double.parseDouble(((String) model.getValueAt(row, 4)).replace(",", ""));
+        double bal = Double.parseDouble(((String) model.getValueAt(row, 5)).replace(",", ""));
         if (bal <= 0) {
             JOptionPane.showMessageDialog(this, "This student has no balance left and is already fully paid.", "Already Paid", JOptionPane.WARNING_MESSAGE);
             return;
@@ -288,9 +306,6 @@ public class PaymentView extends JPanel {
             JOptionPane.showMessageDialog(this, "Amount must be greater than zero.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        if (customAmount > bal) {
-            customAmount = bal;
-        }
 
         // Generate one transaction ID shared across all enrollment payments in this transaction
         String transactionId = generateTransactionId();
@@ -308,8 +323,9 @@ public class PaymentView extends JPanel {
             double eBal = enrollment.getTotalTuition() - enrollmentController.getTotalPaid(enrollment.getEnrollmentId());
             if (eBal <= 0) continue;
             double payAmt = i == studentEnrs.size() - 1 ? Math.round(remainingAmount * 100.0) / 100.0 : Math.min(eBal, Math.round((eBal / bal * customAmount) * 100.0) / 100.0);
+            double excess = Math.max(0, payAmt - eBal);
             remainingAmount -= payAmt;
-            paymentController.makePayment(enrollment.getEnrollmentId(), payAmt, method, transactionId);
+            paymentController.makePayment(enrollment.getEnrollmentId(), payAmt, excess, method, transactionId);
             payments++;
         }
 
@@ -332,7 +348,7 @@ public class PaymentView extends JPanel {
         if (selectedRow >= 0) {
             int modelRow = tblEnrollments.convertRowIndexToModel(selectedRow);
             totalPaid = Double.parseDouble(((String) m.getValueAt(modelRow, 3)).replace(",", ""));
-            totalBal = Double.parseDouble(((String) m.getValueAt(modelRow, 4)).replace(",", ""));
+            totalBal = Double.parseDouble(((String) m.getValueAt(modelRow, 5)).replace(",", ""));
             toPay = totalBal;
         }
 
@@ -362,12 +378,14 @@ public class PaymentView extends JPanel {
                         totalTuition += e.getTotalTuition();
                         totalPaid += enrollmentController.getTotalPaid(e.getEnrollmentId());
                     }
+                    double excess = Math.max(0, totalPaid - totalTuition);
                     double balanceLeft = Math.max(0, totalTuition - totalPaid);
                     m.addRow(new Object[]{
                         selectedStudent.getStudentId(),
                         selectedStudent.getFirstName() + " " + selectedStudent.getLastName(),
                         String.format("%.2f", totalTuition),
                         String.format("%.2f", totalPaid),
+                        String.format("%.2f", excess),
                         String.format("%.2f", balanceLeft)
                     });
                 }
@@ -383,12 +401,14 @@ public class PaymentView extends JPanel {
                         totalTuition += e.getTotalTuition();
                         totalPaid += enrollmentController.getTotalPaid(e.getEnrollmentId());
                     }
+                    double excess = Math.max(0, totalPaid - totalTuition);
                     double balanceLeft = Math.max(0, totalTuition - totalPaid);
                     m.addRow(new Object[]{
                         studentId,
                         studentName,
                         String.format("%.2f", totalTuition),
                         String.format("%.2f", totalPaid),
+                        String.format("%.2f", excess),
                         String.format("%.2f", balanceLeft)
                     });
                 }
@@ -400,28 +420,129 @@ public class PaymentView extends JPanel {
     }
 
     public void loadPaymentHistory() {
-        DefaultTableModel m = (DefaultTableModel) tblHistory.getModel();
-        m.setRowCount(0);
+        paymentGroups.clear();
         Student s = (Student) cmbStudent.getSelectedItem();
         try {
+            List<Payment> rawPayments;
             if (s == null || s.getStudentId() == null || s.getStudentId().isEmpty()) {
-                paymentController.loadPayments(tblHistory);
-                return;
+                rawPayments = paymentController.getAllPayments();
+            } else {
+                rawPayments = paymentController.getAllPaymentsByStudent(s.getStudentId());
             }
-            List<Payment> rawPayments = paymentController.getAllPaymentsByStudent(s.getStudentId());
-            List<Payment> aggregated = paymentController.aggregatePayments(rawPayments);
-            for (Payment p : aggregated) {
-                m.addRow(new Object[]{
-                    p.getStudentId(),
-                    p.getStudentName(),
-                    String.format("%.2f", p.getAmount()),
-                    p.getPaymentMethod(),
-                    p.getReferenceNumber(),
-                    p.getPaymentDate() != null ? p.getPaymentDate().toString() : ""
-                });
+
+            java.util.Map<String, List<Payment>> grouped = new java.util.LinkedHashMap<>();
+            for (Payment p : rawPayments) {
+                String key = p.getStudentName() + "_" + p.getReferenceNumber() + "_" + p.getPaymentMethod() + "_" + p.getPaymentDate();
+                grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(p);
             }
+
+            for (List<Payment> groupRaw : grouped.values()) {
+                Payment first = groupRaw.get(0);
+                double totalAmt = 0;
+                double totalExcess = 0;
+                double totalTuition = 0;
+                for (Payment raw : groupRaw) {
+                    totalAmt += raw.getAmount();
+                    totalExcess += raw.getExcessAmount();
+                    Enrollment enr = enrollmentController.getEnrollment(raw.getEnrollmentId());
+                    if (enr != null) totalTuition += enr.getTotalTuition();
+                }
+                Payment agg = new Payment();
+                agg.setStudentId(first.getStudentId());
+                agg.setStudentName(first.getStudentName());
+                agg.setAmount(totalAmt);
+                agg.setExcessAmount(totalExcess);
+                agg.setPaymentMethod(first.getPaymentMethod());
+                agg.setReferenceNumber(first.getReferenceNumber());
+                agg.setPaymentDate(first.getPaymentDate());
+                paymentGroups.add(new PaymentGroup(agg, groupRaw, totalTuition));
+            }
+            rebuildHistoryTable();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void rebuildHistoryTable() {
+        DefaultTableModel m = (DefaultTableModel) tblHistory.getModel();
+        m.setRowCount(0);
+        for (PaymentGroup group : paymentGroups) {
+            if (!group.visible) continue;
+            Payment agg = group.aggregated;
+            m.addRow(new Object[]{
+                group,
+                agg.getStudentId(),
+                agg.getStudentName(),
+                String.format("%.2f", group.amountToPay),
+                String.format("%.2f", agg.getAmount()),
+                String.format("%.2f", agg.getExcessAmount()),
+                agg.getPaymentMethod(),
+                agg.getReferenceNumber(),
+                agg.getPaymentDate() != null ? agg.getPaymentDate().toString() : ""
+            });
+            if (group.expanded) {
+                for (Payment raw : group.rawPayments) {
+                    Enrollment enr = enrollmentController.getEnrollment(raw.getEnrollmentId());
+                    double tuition = enr != null ? enr.getTotalTuition() : 0;
+                    m.addRow(new Object[]{
+                        null,
+                        "",
+                        raw.getCourseName() != null ? raw.getCourseName() : "",
+                        "",
+                        String.format("%.2f", raw.getAmount()),
+                        String.format("%.2f", raw.getExcessAmount()),
+                        "",
+                        "",
+                        ""
+                    });
+                }
+            }
+        }
+    }
+
+    private static class PaymentGroup {
+        final Payment aggregated;
+        final List<Payment> rawPayments;
+        final double amountToPay;
+        boolean expanded = false;
+        boolean visible = true;
+
+        PaymentGroup(Payment agg, List<Payment> raw, double amtToPay) {
+            this.aggregated = agg;
+            this.rawPayments = raw;
+            this.amountToPay = amtToPay;
+        }
+    }
+
+    private class HistoryCellRenderer extends javax.swing.table.DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            Object col0 = table.getModel().getValueAt(row, 0);
+            boolean isParent = col0 instanceof PaymentGroup;
+
+            if (isParent) {
+                c.setFont(UIHelper.BOLD_FONT);
+                if (!isSelected) c.setBackground(new Color(241, 245, 249));
+            } else {
+                c.setFont(UIHelper.MAIN_FONT);
+                if (!isSelected) c.setBackground(Color.WHITE);
+            }
+            if (isSelected) c.setBackground(table.getSelectionBackground());
+
+            if (column == 0) {
+                if (isParent) {
+                    PaymentGroup g = (PaymentGroup) col0;
+                    setText(g.expanded ? "  ▼" : "  ▶");
+                } else {
+                    setText("");
+                }
+                setHorizontalAlignment(SwingConstants.CENTER);
+            } else {
+                setHorizontalAlignment(SwingConstants.LEFT);
+            }
+            return c;
         }
     }
 

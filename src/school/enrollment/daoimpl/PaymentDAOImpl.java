@@ -11,13 +11,14 @@ public class PaymentDAOImpl implements PaymentDAO {
 
     @Override
     public void insert(Payment payment) throws Exception {
-        String sql = "INSERT INTO payments (enrollment_id, amount, payment_method, reference_number) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO payments (enrollment_id, amount, excess, payment_method, reference_number) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, payment.getEnrollmentId());
             ps.setDouble(2, payment.getAmount());
-            ps.setString(3, payment.getPaymentMethod());
-            ps.setString(4, payment.getReferenceNumber());
+            ps.setDouble(3, payment.getExcessAmount());
+            ps.setString(4, payment.getPaymentMethod());
+            ps.setString(5, payment.getReferenceNumber());
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) payment.setPaymentId(rs.getInt(1));
@@ -179,6 +180,7 @@ public class PaymentDAOImpl implements PaymentDAO {
         p.setPaymentId(rs.getInt("payment_id"));
         p.setEnrollmentId(rs.getInt("enrollment_id"));
         p.setAmount(rs.getDouble("amount"));
+        p.setExcessAmount(rs.getDouble("excess"));
         p.setPaymentMethod(rs.getString("payment_method"));
         p.setReferenceNumber(rs.getString("reference_number"));
         Date d = rs.getDate("payment_date");

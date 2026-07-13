@@ -6,6 +6,7 @@ public class Payment {
     private int paymentId;
     private int enrollmentId;
     private double amount;
+    private double excessAmount;
     private String paymentMethod;
     private LocalDate paymentDate;
     private String referenceNumber;
@@ -22,6 +23,8 @@ public class Payment {
     public void setEnrollmentId(int enrollmentId) { this.enrollmentId = enrollmentId; }
     public double getAmount() { return amount; }
     public void setAmount(double amount) { this.amount = amount; }
+    public double getExcessAmount() { return excessAmount; }
+    public void setExcessAmount(double excessAmount) { this.excessAmount = excessAmount; }
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public LocalDate getPaymentDate() { return paymentDate; }
