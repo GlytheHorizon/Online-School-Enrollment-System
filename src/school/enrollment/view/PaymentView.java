@@ -3,9 +3,12 @@ package school.enrollment.view;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -28,7 +31,7 @@ public class PaymentView extends JPanel {
     private JComboBox<Student> cmbStudent;
     private JTable tblEnrollments, tblHistory;
     private JComboBox<String> cmbPaymentMethod;
-    private JTextField txtAmount, txtReference, txtHistorySearch;
+    private JTextField txtAmount, txtHistorySearch;
     private JLabel lblTotalBalance, lblTotalPaid, lblSelectedBalance;
     private List<Enrollment> currentEnrollments = Collections.emptyList();
 
@@ -159,12 +162,9 @@ public class PaymentView extends JPanel {
         UIHelper.styleField(txtAmount);
         cmbPaymentMethod = new JComboBox<>(new String[]{"Cash", "Bank Transfer", "Check"});
         cmbPaymentMethod.setFont(UIHelper.MAIN_FONT);
-        txtReference = new JTextField(15);
-        UIHelper.styleField(txtReference);
 
         fields.add(UIHelper.createLabeledField("Amount (P)*", txtAmount));
         fields.add(UIHelper.createLabeledField("Method", cmbPaymentMethod));
-        fields.add(UIHelper.createLabeledField("Reference #*", txtReference));
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         UIHelper.stylePanel(buttons);
@@ -178,7 +178,6 @@ public class PaymentView extends JPanel {
         btnClear.addActionListener(e -> {
             txtAmount.setText("");
             cmbPaymentMethod.setSelectedIndex(0);
-            txtReference.setText("");
             tblEnrollments.clearSelection();
             updateSummary();
         });
@@ -211,7 +210,7 @@ public class PaymentView extends JPanel {
         btnPanel.add(btnRefresh);
         searchPanel.add(btnPanel, BorderLayout.EAST);
 
-        String[] cols = {"Student ID", "Name", "Payment", "Method", "Reference", "Date"};
+        String[] cols = {"Student ID", "Name", "Payment", "Method", "Transaction ID", "Date"};
         tblHistory = new JTable(new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int row, int col) { return false; }
         });
@@ -250,6 +249,12 @@ public class PaymentView extends JPanel {
         }
     }
 
+    private static String generateTransactionId() {
+        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String unique = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        return "TXN-" + date + "-" + unique;
+    }
+
     private void paySelected() {
         int[] selectedRows = tblEnrollments.getSelectedRows();
         if (selectedRows.length == 0) {
@@ -267,14 +272,9 @@ public class PaymentView extends JPanel {
         }
 
         String method = (String) cmbPaymentMethod.getSelectedItem();
-        String ref = UIHelper.getCleanText(txtReference);
         String amountStr = UIHelper.getCleanText(txtAmount);
         if (amountStr.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Amount is required.", "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        if (ref.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Reference number is required.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
         double customAmount;
@@ -292,7 +292,9 @@ public class PaymentView extends JPanel {
             customAmount = bal;
         }
 
-        // Get enrollments for the student to pay them
+        // Generate one transaction ID shared across all enrollment payments in this transaction
+        String transactionId = generateTransactionId();
+
         List<Enrollment> studentEnrs = enrollmentController.getEnrollmentsByStudent(studentId);
         if (studentEnrs.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No active enrollments for this student.", "Info", JOptionPane.INFORMATION_MESSAGE);
@@ -307,15 +309,14 @@ public class PaymentView extends JPanel {
             if (eBal <= 0) continue;
             double payAmt = i == studentEnrs.size() - 1 ? Math.round(remainingAmount * 100.0) / 100.0 : Math.min(eBal, Math.round((eBal / bal * customAmount) * 100.0) / 100.0);
             remainingAmount -= payAmt;
-            paymentController.makePayment(enrollment.getEnrollmentId(), payAmt, method, ref);
+            paymentController.makePayment(enrollment.getEnrollmentId(), payAmt, method, transactionId);
             payments++;
         }
 
         if (payments > 0) {
-            JOptionPane.showMessageDialog(this, "Processed " + payments + " payment(s) successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Processed " + payments + " payment(s) successfully!\nTransaction ID: " + transactionId, "Success", JOptionPane.INFORMATION_MESSAGE);
             loadStudentEnrollments();
             txtAmount.setText("");
-            txtReference.setText("");
         } else {
             JOptionPane.showMessageDialog(this, "No applicable balance found.", "Info", JOptionPane.INFORMATION_MESSAGE);
         }

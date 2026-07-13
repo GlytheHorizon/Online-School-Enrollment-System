@@ -15,7 +15,7 @@ public class PaymentController {
         this.paymentDAO = new PaymentDAOImpl();
     }
 
-    public void makePayment(int enrollmentId, double amount, String paymentMethod, String referenceNumber) {
+    public void makePayment(int enrollmentId, double amount, String paymentMethod, String transactionId) {
         if (enrollmentId <= 0) {
             JOptionPane.showMessageDialog(null, "Please select an enrollment.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
@@ -28,19 +28,14 @@ public class PaymentController {
             JOptionPane.showMessageDialog(null, "Please select a payment method.", "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        if (referenceNumber == null || referenceNumber.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(null, "Reference number is required.", "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
 
         try {
             Payment p = new Payment();
             p.setEnrollmentId(enrollmentId);
             p.setAmount(amount);
             p.setPaymentMethod(paymentMethod.trim());
-            p.setReferenceNumber(referenceNumber.trim());
+            p.setReferenceNumber(transactionId);
             paymentDAO.insert(p);
-            JOptionPane.showMessageDialog(null, "Payment recorded successfully!\nPayment ID: " + p.getPaymentId(), "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error recording payment: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }

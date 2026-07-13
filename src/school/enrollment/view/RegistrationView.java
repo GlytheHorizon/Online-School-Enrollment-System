@@ -82,16 +82,21 @@ public class RegistrationView extends JPanel {
 
         // Phone: digits only, max 11
         ((PlainDocument) txtPhone.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            private static final String PLACEHOLDER = "09XXXXXXXXX";
             public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
-                String ns = (cur.substring(0, offs) + str + cur.substring(offs)).replaceAll("[^\\d]", "");
+                String full = cur.substring(0, offs) + str + cur.substring(offs);
+                if (full.equals(PLACEHOLDER)) { fb.replace(0, cur.length(), full, a); return; }
+                String ns = full.replaceAll("[^\\d]", "");
                 if (ns.length() > 11) return;
                 fb.replace(0, cur.length(), ns, a);
             }
             public void replace(FilterBypass fb, int offs, int len, String str, AttributeSet a) throws BadLocationException {
                 if (str == null) { fb.replace(offs, len, null, a); return; }
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
-                String ns = (cur.substring(0, offs) + str + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                String full = cur.substring(0, offs) + str + cur.substring(offs + len);
+                if (full.equals(PLACEHOLDER)) { fb.replace(0, cur.length(), full, a); return; }
+                String ns = full.replaceAll("[^\\d]", "");
                 if (ns.length() > 11) return;
                 fb.replace(0, cur.length(), ns, a);
             }
@@ -333,6 +338,7 @@ public class RegistrationView extends JPanel {
         private final JTextField fStudentId, fFirstName, fLastName, fEmail, fPhone;
         private final JTextField fBirthDate, fBirthPlace, fAddress;
         private final JComboBox<String> fCivilStatus, fSex;
+        private final JLabel lblCivilStatusVal, lblSexVal;
         private final JButton btnEdit, btnDelete, btnSave, btnCancel;
         private final Student student;
         private final JButton btnRestore;
@@ -365,25 +371,58 @@ public class RegistrationView extends JPanel {
             card.add(header, BorderLayout.NORTH);
 
             fStudentId  = new JTextField(student.getStudentId());
-            fFirstName  = new JTextField(student.getFirstName() != null  ? student.getFirstName()  : "");
-            fLastName   = new JTextField(student.getLastName()  != null  ? student.getLastName()   : "");
-            fEmail      = new JTextField(student.getEmail()     != null  ? student.getEmail()      : "");
-            fPhone      = new JTextField(student.getPhone()     != null  ? student.getPhone()      : "");
+            fFirstName  = new JTextField(student.getFirstName() != null  ? student.getFirstName()  : "N/A");
+            fLastName   = new JTextField(student.getLastName()  != null  ? student.getLastName()   : "N/A");
+            fEmail      = new JTextField(student.getEmail()     != null  ? student.getEmail()      : "N/A");
+            fPhone      = new JTextField(student.getPhone()     != null  ? student.getPhone()      : "N/A");
             fBirthDate  = new JTextField(student.getBirthDate() != null
-                              ? student.getBirthDate().format(DATE_FMT) : "");
-            fBirthPlace = new JTextField(student.getBirthPlace() != null ? student.getBirthPlace() : "");
-            fAddress    = new JTextField(student.getAddress()    != null ? student.getAddress()    : "");
+                              ? student.getBirthDate().format(DATE_FMT) : "N/A");
+            fBirthPlace = new JTextField(student.getBirthPlace() != null ? student.getBirthPlace() : "N/A");
+            fAddress    = new JTextField(student.getAddress()    != null ? student.getAddress()    : "N/A");
             fCivilStatus = new JComboBox<>(CIVIL_STATUSES);
             fSex         = new JComboBox<>(SEXES);
 
             if (student.getCivilStatus() != null) fCivilStatus.setSelectedItem(student.getCivilStatus());
             if (student.getSex()         != null) fSex.setSelectedItem(student.getSex());
 
+            // View-mode labels for combos
+            String csVal  = student.getCivilStatus() != null && !student.getCivilStatus().isEmpty() ? student.getCivilStatus() : "N/A";
+            String sexVal = student.getSex()         != null && !student.getSex().isEmpty()         ? student.getSex()         : "N/A";
+            lblCivilStatusVal = new JLabel(csVal);
+            lblSexVal         = new JLabel(sexVal);
+            for (JLabel lbl : new JLabel[]{lblCivilStatusVal, lblSexVal}) {
+                lbl.setFont(UIHelper.MAIN_FONT);
+                lbl.setForeground(new Color(30, 41, 59));
+                lbl.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+            }
+
             for (JTextField f : new JTextField[]{fStudentId, fFirstName, fLastName,
                                                  fEmail, fPhone, fBirthDate, fBirthPlace, fAddress})
                 UIHelper.styleField(f);
             UIHelper.styleComboBox(fCivilStatus);
             UIHelper.styleComboBox(fSex);
+
+            // fPhone: digits only, max 11
+            ((PlainDocument) fPhone.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+                public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
+                    String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                    String ns = (cur.substring(0, offs) + str + cur.substring(offs)).replaceAll("[^\\d]", "");
+                    if (ns.length() > 11) return;
+                    fb.replace(0, cur.length(), ns, a);
+                }
+                public void replace(FilterBypass fb, int offs, int len, String str, AttributeSet a) throws BadLocationException {
+                    if (str == null) { fb.replace(offs, len, null, a); return; }
+                    String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                    String ns = (cur.substring(0, offs) + str + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                    if (ns.length() > 11) return;
+                    fb.replace(0, cur.length(), ns, a);
+                }
+                public void remove(FilterBypass fb, int offs, int len) throws BadLocationException {
+                    String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                    String ns = (cur.substring(0, offs) + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                    fb.replace(0, cur.length(), ns, null);
+                }
+            });
 
             JPanel detailGrid = new JPanel(new GridLayout(0, 2, 10, 8));
             detailGrid.setOpaque(false);
@@ -393,9 +432,22 @@ public class RegistrationView extends JPanel {
             detailGrid.add(UIHelper.createLabeledField("Phone",        fPhone));
             detailGrid.add(UIHelper.createLabeledField("Last Name",    fLastName));
             detailGrid.add(UIHelper.createLabeledField("Birth Date",   fBirthDate));
-            detailGrid.add(UIHelper.createLabeledField("Civil Status", fCivilStatus));
+            // Civil Status cell: label (view) + combo (edit) stacked, only one visible at a time
+            JPanel civilStatusCell = new JPanel(new BorderLayout());
+            civilStatusCell.setOpaque(false);
+            civilStatusCell.add(lblCivilStatusVal, BorderLayout.CENTER);
+            civilStatusCell.add(fCivilStatus, BorderLayout.SOUTH);
+            fCivilStatus.setVisible(false);
+            detailGrid.add(UIHelper.createLabeledField("Civil Status", civilStatusCell));
             detailGrid.add(UIHelper.createLabeledField("Birth Place",  fBirthPlace));
-            detailGrid.add(UIHelper.createLabeledField("Sex",          fSex));
+
+            // Sex cell: label (view) + combo (edit) stacked, only one visible at a time
+            JPanel sexCell = new JPanel(new BorderLayout());
+            sexCell.setOpaque(false);
+            sexCell.add(lblSexVal, BorderLayout.CENTER);
+            sexCell.add(fSex, BorderLayout.SOUTH);
+            fSex.setVisible(false);
+            detailGrid.add(UIHelper.createLabeledField("Sex", sexCell));
             detailGrid.add(UIHelper.createLabeledField("Address",      fAddress));
 
             JPanel coursesPanel = new JPanel(new BorderLayout(8, 8));
@@ -514,18 +566,20 @@ public class RegistrationView extends JPanel {
 
         private void loadDetails() {
             fStudentId.setText(student.getStudentId());
-            fFirstName.setText(student.getFirstName()  != null ? student.getFirstName()  : "");
-            fLastName.setText(student.getLastName()    != null ? student.getLastName()   : "");
-            fEmail.setText(student.getEmail()          != null ? student.getEmail()      : "");
-            fPhone.setText(student.getPhone()          != null ? student.getPhone()      : "");
+            fFirstName.setText(student.getFirstName()  != null ? student.getFirstName()  : "N/A");
+            fLastName.setText(student.getLastName()    != null ? student.getLastName()   : "N/A");
+            fEmail.setText(student.getEmail()          != null ? student.getEmail()      : "N/A");
+            fPhone.setText(student.getPhone()          != null ? student.getPhone()      : "N/A");
             fBirthDate.setText(student.getBirthDate()  != null
-                ? student.getBirthDate().format(DATE_FMT) : "");
-            fBirthPlace.setText(student.getBirthPlace() != null ? student.getBirthPlace() : "");
-            fAddress.setText(student.getAddress()      != null ? student.getAddress()    : "");
+                ? student.getBirthDate().format(DATE_FMT) : "N/A");
+            fBirthPlace.setText(student.getBirthPlace() != null ? student.getBirthPlace() : "N/A");
+            fAddress.setText(student.getAddress()      != null ? student.getAddress()    : "N/A");
             if (student.getCivilStatus() != null) fCivilStatus.setSelectedItem(student.getCivilStatus());
             else fCivilStatus.setSelectedIndex(0);
             if (student.getSex() != null) fSex.setSelectedItem(student.getSex());
             else fSex.setSelectedIndex(0);
+            lblCivilStatusVal.setText(student.getCivilStatus() != null && !student.getCivilStatus().isEmpty() ? student.getCivilStatus() : "N/A");
+            lblSexVal.setText(student.getSex() != null && !student.getSex().isEmpty() ? student.getSex() : "N/A");
         }
 
         private void styleFieldMode(JTextField field, boolean editable) {
@@ -544,14 +598,12 @@ public class RegistrationView extends JPanel {
             }
         }
 
-        private void styleComboMode(JComboBox<String> combo, boolean editable) {
+        private void styleComboMode(JComboBox<String> combo, JLabel viewLabel, boolean editable) {
+            combo.setVisible(editable);
+            viewLabel.setVisible(!editable);
             combo.setEnabled(editable);
             combo.setFocusable(editable);
-            if (!editable) {
-                combo.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-                combo.setBackground(Color.WHITE);
-                combo.setOpaque(false);
-            } else {
+            if (editable) {
                 UIHelper.styleComboBox(combo);
                 combo.setOpaque(true);
             }
@@ -566,8 +618,14 @@ public class RegistrationView extends JPanel {
             styleFieldMode(fBirthDate,  editable);
             styleFieldMode(fBirthPlace, editable);
             styleFieldMode(fAddress,    editable);
-            styleComboMode(fCivilStatus, editable);
-            styleComboMode(fSex,         editable);
+            styleComboMode(fCivilStatus, lblCivilStatusVal, editable);
+            styleComboMode(fSex,         lblSexVal,         editable);
+            // When entering edit mode, clear N/A placeholders so the user types real data
+            if (editable) {
+                for (JTextField f : new JTextField[]{fFirstName, fLastName, fEmail, fPhone, fBirthDate, fBirthPlace, fAddress}) {
+                    if ("N/A".equals(f.getText())) f.setText("");
+                }
+            }
             btnEdit.setVisible(!editable);
             btnDelete.setVisible(!editable);
             btnSave.setVisible(editable);
