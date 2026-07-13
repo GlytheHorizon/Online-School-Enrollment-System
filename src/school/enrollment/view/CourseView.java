@@ -3,6 +3,8 @@ package school.enrollment.view;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.PlainDocument;
 import school.enrollment.controller.CourseController;
 
 public class CourseView extends JPanel {
@@ -46,6 +48,34 @@ public class CourseView extends JPanel {
         txtTuition = new JTextField(10);
         for (JTextField f : new JTextField[]{txtCourseCode, txtCourseName, txtUnits, txtTuition})
             UIHelper.styleField(f);
+
+        // Restrict Units to a single digit (1-9)
+        ((PlainDocument) txtUnits.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offs, String str, javax.swing.text.AttributeSet a)
+                    throws BadLocationException {
+                String current = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String result = (current.substring(0, offs) + str + current.substring(offs)).replaceAll("[^\\d]", "");
+                if (result.length() > 1) return;
+                fb.replace(0, current.length(), result, a);
+            }
+            @Override
+            public void replace(FilterBypass fb, int offs, int len, String str, javax.swing.text.AttributeSet a)
+                    throws BadLocationException {
+                if (str == null) { fb.replace(offs, len, null, a); return; }
+                String current = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String result = (current.substring(0, offs) + str + current.substring(offs + len)).replaceAll("[^\\d]", "");
+                if (result.length() > 1) return;
+                fb.replace(0, current.length(), result, a);
+            }
+            @Override
+            public void remove(FilterBypass fb, int offs, int len)
+                    throws BadLocationException {
+                String current = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String result = (current.substring(0, offs) + current.substring(offs + len)).replaceAll("[^\\d]", "");
+                fb.replace(0, current.length(), result, null);
+            }
+        });
 
         fields.add(UIHelper.createLabeledField("Course Code*", txtCourseCode));
         fields.add(UIHelper.createLabeledField("Course Name*", txtCourseName));

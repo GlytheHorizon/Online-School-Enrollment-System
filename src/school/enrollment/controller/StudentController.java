@@ -1,5 +1,6 @@
 package school.enrollment.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -15,48 +16,107 @@ public class StudentController {
         this.studentDAO = new StudentDAOImpl();
     }
 
-    public void registerStudent(String studentId, String firstName, String lastName, String email, String phone, String address) {
-        if (studentId.trim().isEmpty() || firstName.trim().isEmpty() || lastName.trim().isEmpty() || email.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(null, "Student ID, first name, last name, and email are required.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+    public void registerStudent(String studentId, String firstName, String lastName,
+                                String email, String phone,
+                                LocalDate birthDate, String birthPlace,
+                                String civilStatus, String sex, String address) {
+        if (studentId.trim().isEmpty() || firstName.trim().isEmpty()
+                || lastName.trim().isEmpty() || email.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(null,
+                "Student ID, first name, last name, and email are required.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
         if (!studentId.matches("^\\d{4}-\\d{4}$")) {
-            JOptionPane.showMessageDialog(null, "Student ID must be in format XXXX-XXXX (e.g., 2024-0001).", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                "Student ID must be in format XXXX-XXXX (e.g., 2024-0001).",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
         if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
-            JOptionPane.showMessageDialog(null, "Invalid email format.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Invalid email format.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (birthDate == null) {
+            JOptionPane.showMessageDialog(null, "Birth date is required.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (civilStatus == null || civilStatus.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Civil status is required.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (sex == null || sex.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Sex is required.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
         try {
-            Student s = new Student(studentId.trim(), firstName.trim(), lastName.trim(), email.trim(), phone.trim(), address.trim());
+            Student s = new Student(studentId.trim(), firstName.trim(), lastName.trim(),
+                    email.trim(), phone.trim(), birthDate,
+                    birthPlace == null ? "" : birthPlace.trim(),
+                    civilStatus.trim(), sex.trim(), address.trim());
             studentDAO.insert(s);
-            JOptionPane.showMessageDialog(null, "Student registered successfully!\nID: " + s.getStudentId(), "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                "Student registered successfully!\nID: " + s.getStudentId(),
+                "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error registering student: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                "Error registering student: " + e.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    public void updateStudent(String studentId, String firstName, String lastName, String email, String phone, String address) {
+    public void updateStudent(String studentId, String firstName, String lastName,
+                              String email, String phone,
+                              LocalDate birthDate, String birthPlace,
+                              String civilStatus, String sex, String address) {
         if (firstName.trim().isEmpty() || lastName.trim().isEmpty() || email.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(null, "First name, last name, and email are required.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                "First name, last name, and email are required.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (birthDate == null) {
+            JOptionPane.showMessageDialog(null, "Birth date is required.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (civilStatus == null || civilStatus.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Civil status is required.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (sex == null || sex.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Sex is required.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
         try {
             Student s = studentDAO.get(studentId);
             if (s == null) {
-                JOptionPane.showMessageDialog(null, "Student not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Student not found.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             s.setFirstName(firstName.trim());
             s.setLastName(lastName.trim());
             s.setEmail(email.trim());
             s.setPhone(phone.trim());
+            s.setBirthDate(birthDate);
+            s.setBirthPlace(birthPlace == null ? "" : birthPlace.trim());
+            s.setCivilStatus(civilStatus.trim());
+            s.setSex(sex.trim());
             s.setAddress(address.trim());
             studentDAO.update(s);
-            JOptionPane.showMessageDialog(null, "Student updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Student updated successfully!",
+                "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error updating student: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                "Error updating student: " + e.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -93,7 +153,9 @@ public class StudentController {
                 model.addRow(new Object[]{s.getStudentId(), s.getFirstName(), s.getLastName(), s.getEmail(), s.getPhone(), s.getAddress()});
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error loading students: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                "Error loading students: " + e.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -106,7 +168,9 @@ public class StudentController {
                 model.addRow(new Object[]{s.getStudentId(), s.getFirstName(), s.getLastName(), s.getEmail(), s.getPhone(), s.getAddress()});
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error searching students: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                "Error searching students: " + e.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -148,11 +212,8 @@ public class StudentController {
     }
 
     public Student getStudent(String studentId) {
-        try {
-            return studentDAO.get(studentId);
-        } catch (Exception e) {
-            return null;
-        }
+        try { return studentDAO.get(studentId); }
+        catch (Exception e) { return null; }
     }
 
     public List<Student> getAllStudents() {

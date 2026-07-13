@@ -10,6 +10,7 @@ public class Payment {
     private LocalDate paymentDate;
     private String referenceNumber;
 
+    private String studentId;
     private String studentName;
     private String courseName;
 
@@ -28,6 +29,8 @@ public class Payment {
     public String getReferenceNumber() { return referenceNumber; }
     public void setReferenceNumber(String referenceNumber) { this.referenceNumber = referenceNumber; }
 
+    public String getStudentId() { return studentId; }
+    public void setStudentId(String studentId) { this.studentId = studentId; }
     public String getStudentName() { return studentName; }
     public void setStudentName(String studentName) { this.studentName = studentName; }
     public String getCourseName() { return courseName; }

@@ -3,6 +3,9 @@ package school.enrollment.view;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -15,13 +18,23 @@ import school.enrollment.controller.StudentController;
 import school.enrollment.model.Enrollment;
 import school.enrollment.model.Student;
 
+
 public class RegistrationView extends JPanel {
     private final StudentController controller;
     private final EnrollmentController enrollmentController;
-    private JTextField txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone, txtAddress;
+
+    // Form fields
+    private JTextField txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone;
+    private JTextField txtBirthDate, txtBirthPlace, txtAddress;
+    private JComboBox<String> cmbCivilStatus, cmbSex;
+
     private JTable tblStudents;
     private JTextField txtSearch;
     private boolean showArchived = false;
+
+    private static final String[] CIVIL_STATUSES = {"", "Single", "Married", "Widowed", "Separated", "Divorced"};
+    private static final String[] SEXES          = {"", "Male", "Female"};
+    static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("MM/dd/yyyy");
 
     public RegistrationView() {
         controller = new StudentController();
@@ -34,7 +47,7 @@ public class RegistrationView extends JPanel {
 
     private void initComponents() {
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        split.setResizeWeight(0.38);
+        split.setResizeWeight(0.45);
         split.setDividerSize(6);
         split.setBorder(null);
         split.setTopComponent(createFormPanel());
@@ -50,15 +63,24 @@ public class RegistrationView extends JPanel {
         JPanel fields = new JPanel(new GridLayout(0, 2, 18, 12));
         UIHelper.stylePanel(fields);
 
-        txtStudentId = new JTextField(10);
-        txtFirstName = new JTextField(20);
-        txtLastName = new JTextField(20);
-        txtEmail = new JTextField(20);
-        txtPhone = new JTextField(20);
-        txtAddress = new JTextField(20);
-        for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone, txtAddress})
-            UIHelper.styleField(f);
+        txtStudentId  = new JTextField(10);
+        txtFirstName  = new JTextField(20);
+        txtLastName   = new JTextField(20);
+        txtEmail      = new JTextField(20);
+        txtPhone      = new JTextField(20);
+        txtBirthDate  = new JTextField(10);
+        txtBirthPlace = new JTextField(20);
+        txtAddress    = new JTextField(20);
+        cmbCivilStatus = new JComboBox<>(CIVIL_STATUSES);
+        cmbSex         = new JComboBox<>(SEXES);
 
+        for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName,
+                                             txtEmail, txtPhone, txtBirthDate, txtBirthPlace, txtAddress})
+            UIHelper.styleField(f);
+        UIHelper.styleComboBox(cmbCivilStatus);
+        UIHelper.styleComboBox(cmbSex);
+
+        // Phone: digits only, max 11
         ((PlainDocument) txtPhone.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
             public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
@@ -80,73 +102,101 @@ public class RegistrationView extends JPanel {
             }
         });
 
+        // Student ID: XXXX-XXXX format, digits only
         ((PlainDocument) txtStudentId.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            private String fmt(String d) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < d.length(); i++) { if (i == 4) sb.append('-'); sb.append(d.charAt(i)); }
+                return sb.toString();
+            }
             public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
                 String ns = (cur.substring(0, offs) + str + cur.substring(offs)).replaceAll("[^\\d]", "");
                 if (ns.length() > 8) return;
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < ns.length(); i++) { if (i == 4) sb.append('-'); sb.append(ns.charAt(i)); }
-                fb.replace(0, cur.length(), sb.toString(), a);
+                fb.replace(0, cur.length(), fmt(ns), a);
             }
             public void replace(FilterBypass fb, int offs, int len, String str, AttributeSet a) throws BadLocationException {
                 if (str == null) { fb.replace(offs, len, null, a); return; }
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
                 String ns = (cur.substring(0, offs) + str + cur.substring(offs + len)).replaceAll("[^\\d]", "");
                 if (ns.length() > 8) return;
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < ns.length(); i++) { if (i == 4) sb.append('-'); sb.append(ns.charAt(i)); }
-                fb.replace(0, cur.length(), sb.toString(), a);
+                fb.replace(0, cur.length(), fmt(ns), a);
             }
             public void remove(FilterBypass fb, int offs, int len) throws BadLocationException {
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
                 String ns = (cur.substring(0, offs) + cur.substring(offs + len)).replaceAll("[^\\d]", "");
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < ns.length(); i++) { if (i == 4) sb.append('-'); sb.append(ns.charAt(i)); }
-                fb.replace(0, cur.length(), sb.toString(), null);
+                fb.replace(0, cur.length(), fmt(ns), null);
             }
         });
 
-        UIHelper.setPlaceholder(txtStudentId, "2024-0001");
-        UIHelper.setPlaceholder(txtFirstName, "e.g., Juan");
-        UIHelper.setPlaceholder(txtLastName, "e.g., Dela Cruz");
-        UIHelper.setPlaceholder(txtEmail, "email@example.com");
-        UIHelper.setPlaceholder(txtPhone, "09XXXXXXXXX");
-        UIHelper.setPlaceholder(txtAddress, "Street, City, Province");
+        UIHelper.setPlaceholder(txtStudentId,  "2024-0001");
+        UIHelper.setPlaceholder(txtFirstName,  "e.g., Juan");
+        UIHelper.setPlaceholder(txtLastName,   "e.g., Dela Cruz");
+        UIHelper.setPlaceholder(txtEmail,      "email@example.com");
+        UIHelper.setPlaceholder(txtPhone,      "09XXXXXXXXX");
+        UIHelper.setPlaceholder(txtBirthDate,  "MM/DD/YYYY");
+        UIHelper.setPlaceholder(txtBirthPlace, "e.g., Manila");
+        UIHelper.setPlaceholder(txtAddress,    "Street, City, Province");
 
-        fields.add(UIHelper.createLabeledField("Student ID*", txtStudentId));
-        fields.add(UIHelper.createLabeledField("First Name*", txtFirstName));
-        fields.add(UIHelper.createLabeledField("Last Name*", txtLastName));
-        fields.add(UIHelper.createLabeledField("Email*", txtEmail));
-        fields.add(UIHelper.createLabeledField("Phone", txtPhone));
-        fields.add(UIHelper.createLabeledField("Address", txtAddress));
+        fields.add(UIHelper.createLabeledField("Student ID*",   txtStudentId));
+        fields.add(UIHelper.createLabeledField("First Name*",   txtFirstName));
+        fields.add(UIHelper.createLabeledField("Last Name*",    txtLastName));
+        fields.add(UIHelper.createLabeledField("Email*",        txtEmail));
+        fields.add(UIHelper.createLabeledField("Phone",         txtPhone));
+        fields.add(UIHelper.createLabeledField("Birth Date*",   txtBirthDate));
+        fields.add(UIHelper.createLabeledField("Birth Place",   txtBirthPlace));
+        fields.add(UIHelper.createLabeledField("Civil Status*", cmbCivilStatus));
+        fields.add(UIHelper.createLabeledField("Sex*",          cmbSex));
+        fields.add(UIHelper.createLabeledField("Address",       txtAddress));
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         UIHelper.stylePanel(buttons);
-        JButton btnSave = UIHelper.createButton("Register", UIHelper.SUCCESS);
+        JButton btnSave  = UIHelper.createButton("Register", UIHelper.SUCCESS);
         JButton btnClear = UIHelper.createGhostButton("Clear");
 
         btnSave.addActionListener(e -> {
+            LocalDate bd = parseBirthDate(UIHelper.getCleanText(txtBirthDate));
+            String rawBD = UIHelper.getCleanText(txtBirthDate);
+            if (!rawBD.isEmpty() && bd == null) return;
+            String cs  = (String) cmbCivilStatus.getSelectedItem();
+            String sex = (String) cmbSex.getSelectedItem();
             controller.registerStudent(
                 UIHelper.getCleanText(txtStudentId),
                 UIHelper.getCleanText(txtFirstName),
                 UIHelper.getCleanText(txtLastName),
                 UIHelper.getCleanText(txtEmail),
                 UIHelper.getCleanText(txtPhone),
+                bd,
+                UIHelper.getCleanText(txtBirthPlace),
+                cs  == null ? "" : cs,
+                sex == null ? "" : sex,
                 UIHelper.getCleanText(txtAddress));
             clearForm(); loadStudentTable();
         });
         btnClear.addActionListener(e -> clearForm());
 
-        buttons.add(btnSave); buttons.add(btnClear);
-        
+        buttons.add(btnSave);
+        buttons.add(btnClear);
+
         JPanel fieldsWrapper = new JPanel(new BorderLayout());
         UIHelper.stylePanel(fieldsWrapper);
         fieldsWrapper.add(fields, BorderLayout.NORTH);
-        
+
         panel.add(fieldsWrapper, BorderLayout.CENTER);
         panel.add(buttons, BorderLayout.SOUTH);
         return panel;
+    }
+
+    LocalDate parseBirthDate(String text) {
+        if (text == null || text.isBlank()) return null;
+        try {
+            return LocalDate.parse(text.trim(), DATE_FMT);
+        } catch (DateTimeParseException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Birth date must be in MM/DD/YYYY format (e.g., 01/15/2000).",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return null;
+        }
     }
 
     private JPanel createTablePanel() {
@@ -163,8 +213,6 @@ public class RegistrationView extends JPanel {
 
         JLabel emptyStudents = UIHelper.createEmptyStateLabel("No students found.");
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        UIHelper.stylePanel(btnPanel);
         Color archiveColor = new Color(139, 92, 246);
         Color activeColor = new Color(22, 163, 74);
         JLabel lblListType = new JLabel("Active List");
@@ -188,7 +236,9 @@ public class RegistrationView extends JPanel {
         });
         JButton btnSearch = UIHelper.createSecondaryButton("Search");
         JButton btnRefresh = UIHelper.createGhostButton("Refresh");
-        tblStudents = new JTable(new DefaultTableModel(new Object[]{"Student ID", "First Name", "Last Name", "Email", "Phone", "Address"}, 0) {
+
+        tblStudents = new JTable(new DefaultTableModel(
+            new Object[]{"Student ID", "First Name", "Last Name", "Email", "Phone", "Address"}, 0) {
             public boolean isCellEditable(int row, int col) { return false; }
         });
         tblStudents.setRowHeight(40);
@@ -202,28 +252,32 @@ public class RegistrationView extends JPanel {
             UIHelper.setEmptyStateVisible(tblStudents, emptyStudents);
         });
         btnRefresh.addActionListener(e -> { txtSearch.setText(""); loadStudentTable(); UIHelper.setEmptyStateVisible(tblStudents, emptyStudents); });
-        btnPanel.add(btnArchive);
+
+        // Row 1: search field + Search, Refresh, Show Archived buttons
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        UIHelper.stylePanel(btnPanel);
         btnPanel.add(btnSearch);
+        btnPanel.add(btnArchive);
         btnPanel.add(btnRefresh);
         searchPanel.add(btnPanel, BorderLayout.EAST);
 
-        JPanel listTypeRow = new JPanel(new BorderLayout());
-        listTypeRow.setOpaque(false);
-        listTypeRow.add(lblListType, BorderLayout.CENTER);
-        listTypeRow.setBorder(BorderFactory.createEmptyBorder(2, 0, 4, 0));
+        // Row 2: list type label on the left
+        JPanel archiveRow = new JPanel(new BorderLayout());
+        archiveRow.setOpaque(false);
+        archiveRow.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
+        lblListType.setHorizontalAlignment(SwingConstants.CENTER);
+        archiveRow.add(lblListType, BorderLayout.CENTER);
 
         JPanel topSection = new JPanel(new BorderLayout());
         topSection.setOpaque(false);
         topSection.add(searchPanel, BorderLayout.NORTH);
-        topSection.add(listTypeRow, BorderLayout.SOUTH);
+        topSection.add(archiveRow, BorderLayout.SOUTH);
 
         tblStudents.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int row = tblStudents.rowAtPoint(e.getPoint());
-                if (row >= 0) {
-                    openStudentDetails(row);
-                }
+                if (row >= 0) openStudentDetails(row);
             }
         });
         loadStudentTable();
@@ -252,14 +306,16 @@ public class RegistrationView extends JPanel {
     }
 
     private void clearForm() {
-        txtStudentId.setText("2024-0001");
-        txtFirstName.setText("e.g., Juan");
-        txtLastName.setText("e.g., Dela Cruz");
-        txtEmail.setText("email@example.com");
-        txtPhone.setText("09XXXXXXXXX");
-        txtAddress.setText("Street, City, Province");
-        for (JTextField f : new JTextField[]{txtStudentId, txtFirstName, txtLastName, txtEmail, txtPhone, txtAddress})
-            f.setForeground(Color.GRAY);
+        txtStudentId.setText("2024-0001");     txtStudentId.setForeground(Color.GRAY);
+        txtFirstName.setText("e.g., Juan");    txtFirstName.setForeground(Color.GRAY);
+        txtLastName.setText("e.g., Dela Cruz");txtLastName.setForeground(Color.GRAY);
+        txtEmail.setText("email@example.com"); txtEmail.setForeground(Color.GRAY);
+        txtPhone.setText("09XXXXXXXXX");       txtPhone.setForeground(Color.GRAY);
+        txtBirthDate.setText("MM/DD/YYYY");    txtBirthDate.setForeground(Color.GRAY);
+        txtBirthPlace.setText("e.g., Manila"); txtBirthPlace.setForeground(Color.GRAY);
+        txtAddress.setText("Street, City, Province"); txtAddress.setForeground(Color.GRAY);
+        cmbCivilStatus.setSelectedIndex(0);
+        cmbSex.setSelectedIndex(0);
         tblStudents.clearSelection();
     }
 
@@ -274,26 +330,20 @@ public class RegistrationView extends JPanel {
     }
 
     private class StudentDetailsDialog extends JDialog {
-        private final JTextField txtStudentId;
-        private final JTextField txtFirstName;
-        private final JTextField txtLastName;
-        private final JTextField txtEmail;
-        private final JTextField txtPhone;
-        private final JTextField txtAddress;
-        private final JButton btnEdit;
-        private final JButton btnDelete;
-        private final JButton btnSave;
-        private final JButton btnCancel;
-
+        private final JTextField fStudentId, fFirstName, fLastName, fEmail, fPhone;
+        private final JTextField fBirthDate, fBirthPlace, fAddress;
+        private final JComboBox<String> fCivilStatus, fSex;
+        private final JButton btnEdit, btnDelete, btnSave, btnCancel;
         private final Student student;
         private final JButton btnRestore;
 
         public StudentDetailsDialog(Student student) {
-            super(SwingUtilities.getWindowAncestor(RegistrationView.this), "Student Details", ModalityType.APPLICATION_MODAL);
+            super(SwingUtilities.getWindowAncestor(RegistrationView.this),
+                  "Student Details", ModalityType.APPLICATION_MODAL);
             this.student = student;
             setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-            setPreferredSize(new Dimension(1040, 720));
-            setMinimumSize(new Dimension(960, 660));
+            setPreferredSize(new Dimension(1060, 860));
+            setMinimumSize(new Dimension(960, 800));
             setResizable(true);
 
             JPanel dialogRoot = new JPanel(new GridBagLayout());
@@ -301,7 +351,6 @@ public class RegistrationView extends JPanel {
             dialogRoot.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
             JPanel card = new JPanel(new BorderLayout(18, 18));
-            card.setPreferredSize(new Dimension(860, 620));
             card.setBackground(Color.WHITE);
             card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
@@ -315,28 +364,39 @@ public class RegistrationView extends JPanel {
             header.add(title, BorderLayout.WEST);
             card.add(header, BorderLayout.NORTH);
 
+            fStudentId  = new JTextField(student.getStudentId());
+            fFirstName  = new JTextField(student.getFirstName() != null  ? student.getFirstName()  : "");
+            fLastName   = new JTextField(student.getLastName()  != null  ? student.getLastName()   : "");
+            fEmail      = new JTextField(student.getEmail()     != null  ? student.getEmail()      : "");
+            fPhone      = new JTextField(student.getPhone()     != null  ? student.getPhone()      : "");
+            fBirthDate  = new JTextField(student.getBirthDate() != null
+                              ? student.getBirthDate().format(DATE_FMT) : "");
+            fBirthPlace = new JTextField(student.getBirthPlace() != null ? student.getBirthPlace() : "");
+            fAddress    = new JTextField(student.getAddress()    != null ? student.getAddress()    : "");
+            fCivilStatus = new JComboBox<>(CIVIL_STATUSES);
+            fSex         = new JComboBox<>(SEXES);
+
+            if (student.getCivilStatus() != null) fCivilStatus.setSelectedItem(student.getCivilStatus());
+            if (student.getSex()         != null) fSex.setSelectedItem(student.getSex());
+
+            for (JTextField f : new JTextField[]{fStudentId, fFirstName, fLastName,
+                                                 fEmail, fPhone, fBirthDate, fBirthPlace, fAddress})
+                UIHelper.styleField(f);
+            UIHelper.styleComboBox(fCivilStatus);
+            UIHelper.styleComboBox(fSex);
+
             JPanel detailGrid = new JPanel(new GridLayout(0, 2, 10, 8));
             detailGrid.setOpaque(false);
-
-            txtStudentId = new JTextField(student.getStudentId());
-            txtFirstName = new JTextField(student.getFirstName());
-            txtLastName = new JTextField(student.getLastName());
-            txtEmail = new JTextField(student.getEmail());
-            txtPhone = new JTextField(student.getPhone());
-            txtAddress = new JTextField(student.getAddress());
-            UIHelper.styleField(txtStudentId);
-            UIHelper.styleField(txtFirstName);
-            UIHelper.styleField(txtLastName);
-            UIHelper.styleField(txtEmail);
-            UIHelper.styleField(txtPhone);
-            UIHelper.styleField(txtAddress);
-
-            detailGrid.add(UIHelper.createLabeledField("Student ID", txtStudentId));
-            detailGrid.add(UIHelper.createLabeledField("Email", txtEmail));
-            detailGrid.add(UIHelper.createLabeledField("First Name", txtFirstName));
-            detailGrid.add(UIHelper.createLabeledField("Phone", txtPhone));
-            detailGrid.add(UIHelper.createLabeledField("Last Name", txtLastName));
-            detailGrid.add(UIHelper.createLabeledField("Address", txtAddress));
+            detailGrid.add(UIHelper.createLabeledField("Student ID",   fStudentId));
+            detailGrid.add(UIHelper.createLabeledField("Email",        fEmail));
+            detailGrid.add(UIHelper.createLabeledField("First Name",   fFirstName));
+            detailGrid.add(UIHelper.createLabeledField("Phone",        fPhone));
+            detailGrid.add(UIHelper.createLabeledField("Last Name",    fLastName));
+            detailGrid.add(UIHelper.createLabeledField("Birth Date",   fBirthDate));
+            detailGrid.add(UIHelper.createLabeledField("Civil Status", fCivilStatus));
+            detailGrid.add(UIHelper.createLabeledField("Birth Place",  fBirthPlace));
+            detailGrid.add(UIHelper.createLabeledField("Sex",          fSex));
+            detailGrid.add(UIHelper.createLabeledField("Address",      fAddress));
 
             JPanel coursesPanel = new JPanel(new BorderLayout(8, 8));
             coursesPanel.setOpaque(false);
@@ -345,13 +405,15 @@ public class RegistrationView extends JPanel {
                 "Enrolled Courses", TitledBorder.LEADING, TitledBorder.TOP,
                 new Font("Segoe UI", Font.BOLD, 13), new Color(51, 65, 85)));
 
-            JTable courseTable = new JTable(new DefaultTableModel(new Object[]{"Course Code", "Course", "Units", "Tuition", "Paid", "Balance"}, 0) {
-                public boolean isCellEditable(int row, int col) { return false; }
+            JTable courseTable = new JTable(new DefaultTableModel(
+                new Object[]{"Course Code", "Course", "Units", "Tuition", "Paid", "Balance"}, 0) {
+                public boolean isCellEditable(int r, int c) { return false; }
             });
             UIHelper.styleTable(courseTable);
-            JScrollPane courseScroll = new JScrollPane(courseTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            JScrollPane courseScroll = new JScrollPane(courseTable,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
             UIHelper.styleScrollPane(courseScroll);
-            courseScroll.setPreferredSize(new Dimension(200, 150));
+            courseScroll.setPreferredSize(new Dimension(400, 150));
             coursesPanel.add(courseScroll, BorderLayout.CENTER);
 
             List<Enrollment> enrollments = enrollmentController.getEnrollmentsByStudent(student.getStudentId());
@@ -371,7 +433,6 @@ public class RegistrationView extends JPanel {
             btnEdit = UIHelper.createSecondaryButton("Edit");
             btnSave = UIHelper.createButton("Save", new Color(22, 163, 74));
             btnCancel = UIHelper.createSecondaryButton("Cancel");
-
             btnSave.setVisible(false);
             btnCancel.setVisible(false);
             btnRestore.setVisible(false);
@@ -387,44 +448,41 @@ public class RegistrationView extends JPanel {
                 dispose();
             });
             btnSave.addActionListener(e -> {
+                LocalDate bd = parseBirthDate(UIHelper.getCleanText(fBirthDate));
+                String rawBD = UIHelper.getCleanText(fBirthDate);
+                if (!rawBD.isEmpty() && bd == null) return;
+                String cs  = (String) fCivilStatus.getSelectedItem();
+                String sex = (String) fSex.getSelectedItem();
                 controller.updateStudent(
                     student.getStudentId(),
-                    UIHelper.getCleanText(txtFirstName),
-                    UIHelper.getCleanText(txtLastName),
-                    UIHelper.getCleanText(txtEmail),
-                    UIHelper.getCleanText(txtPhone),
-                    UIHelper.getCleanText(txtAddress));
+                    UIHelper.getCleanText(fFirstName),
+                    UIHelper.getCleanText(fLastName),
+                    UIHelper.getCleanText(fEmail),
+                    UIHelper.getCleanText(fPhone),
+                    bd,
+                    UIHelper.getCleanText(fBirthPlace),
+                    cs  == null ? "" : cs,
+                    sex == null ? "" : sex,
+                    UIHelper.getCleanText(fAddress));
                 setEditMode(false);
                 dispose();
             });
-            btnCancel.addActionListener(e -> {
-                setEditMode(false);
-                loadDetails();
-            });
+            btnCancel.addActionListener(e -> { setEditMode(false); loadDetails(); });
 
             JPanel editBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 4));
             editBar.setOpaque(false);
-            editBar.add(btnEdit);
-            editBar.add(btnSave);
-            editBar.add(btnCancel);
+            editBar.add(btnEdit); editBar.add(btnSave); editBar.add(btnCancel);
 
             JPanel detailWrapper = new JPanel(new GridBagLayout());
             detailWrapper.setOpaque(false);
-            GridBagConstraints dwGbc = new GridBagConstraints();
-            dwGbc.gridx = 0; dwGbc.gridy = 0;
-            dwGbc.weightx = 1.0; dwGbc.weighty = 0.0;
-            dwGbc.fill = GridBagConstraints.HORIZONTAL;
-            detailWrapper.add(detailGrid, dwGbc);
-
-            dwGbc.gridy = 1;
-            dwGbc.insets = new Insets(10, 0, 0, 0);
-            detailWrapper.add(editBar, dwGbc);
-
-            dwGbc.gridy = 2;
-            dwGbc.weighty = 1.0;
-            dwGbc.fill = GridBagConstraints.BOTH;
-            detailWrapper.add(Box.createGlue(), dwGbc);
-
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 0;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            detailWrapper.add(detailGrid, gbc);
+            gbc.gridy = 1; gbc.insets = new Insets(10, 0, 0, 0);
+            detailWrapper.add(editBar, gbc);
+            gbc.gridy = 2; gbc.weighty = 1; gbc.fill = GridBagConstraints.BOTH;
+            detailWrapper.add(Box.createGlue(), gbc);
             card.add(detailWrapper, BorderLayout.CENTER);
 
             JPanel deleteBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -444,19 +502,30 @@ public class RegistrationView extends JPanel {
             card.add(bottomWrapper, BorderLayout.SOUTH);
 
             setEditMode(false);
-            dialogRoot.add(card);
+            GridBagConstraints cardGbc = new GridBagConstraints();
+            cardGbc.fill = GridBagConstraints.BOTH;
+            cardGbc.weightx = 1.0;
+            cardGbc.weighty = 1.0;
+            dialogRoot.add(card, cardGbc);
             setContentPane(dialogRoot);
             pack();
             setLocationRelativeTo(getOwner());
         }
 
         private void loadDetails() {
-            txtStudentId.setText(student.getStudentId());
-            txtFirstName.setText(student.getFirstName());
-            txtLastName.setText(student.getLastName());
-            txtEmail.setText(student.getEmail());
-            txtPhone.setText(student.getPhone());
-            txtAddress.setText(student.getAddress());
+            fStudentId.setText(student.getStudentId());
+            fFirstName.setText(student.getFirstName()  != null ? student.getFirstName()  : "");
+            fLastName.setText(student.getLastName()    != null ? student.getLastName()   : "");
+            fEmail.setText(student.getEmail()          != null ? student.getEmail()      : "");
+            fPhone.setText(student.getPhone()          != null ? student.getPhone()      : "");
+            fBirthDate.setText(student.getBirthDate()  != null
+                ? student.getBirthDate().format(DATE_FMT) : "");
+            fBirthPlace.setText(student.getBirthPlace() != null ? student.getBirthPlace() : "");
+            fAddress.setText(student.getAddress()      != null ? student.getAddress()    : "");
+            if (student.getCivilStatus() != null) fCivilStatus.setSelectedItem(student.getCivilStatus());
+            else fCivilStatus.setSelectedIndex(0);
+            if (student.getSex() != null) fSex.setSelectedItem(student.getSex());
+            else fSex.setSelectedIndex(0);
         }
 
         private void styleFieldMode(JTextField field, boolean editable) {
@@ -475,13 +544,30 @@ public class RegistrationView extends JPanel {
             }
         }
 
+        private void styleComboMode(JComboBox<String> combo, boolean editable) {
+            combo.setEnabled(editable);
+            combo.setFocusable(editable);
+            if (!editable) {
+                combo.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+                combo.setBackground(Color.WHITE);
+                combo.setOpaque(false);
+            } else {
+                UIHelper.styleComboBox(combo);
+                combo.setOpaque(true);
+            }
+        }
+
         private void setEditMode(boolean editable) {
-            styleFieldMode(txtStudentId, false);
-            styleFieldMode(txtFirstName, editable);
-            styleFieldMode(txtLastName, editable);
-            styleFieldMode(txtEmail, editable);
-            styleFieldMode(txtPhone, editable);
-            styleFieldMode(txtAddress, editable);
+            styleFieldMode(fStudentId,  false);
+            styleFieldMode(fFirstName,  editable);
+            styleFieldMode(fLastName,   editable);
+            styleFieldMode(fEmail,      editable);
+            styleFieldMode(fPhone,      editable);
+            styleFieldMode(fBirthDate,  editable);
+            styleFieldMode(fBirthPlace, editable);
+            styleFieldMode(fAddress,    editable);
+            styleComboMode(fCivilStatus, editable);
+            styleComboMode(fSex,         editable);
             btnEdit.setVisible(!editable);
             btnDelete.setVisible(!editable);
             btnSave.setVisible(editable);

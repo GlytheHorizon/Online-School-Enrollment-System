@@ -6,6 +6,7 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 
 public class MainView extends JFrame {
+    private DashboardView dashboardView;
     private RegistrationView registrationView;
     private CourseView courseView;
     private EnrollmentView enrollmentView;
@@ -72,18 +73,21 @@ public class MainView extends JFrame {
         tabs.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(226, 232, 240)));
         tabs.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 
+        dashboardView    = new DashboardView();
         registrationView = new RegistrationView();
-        courseView = new CourseView();
-        enrollmentView = new EnrollmentView();
-        paymentView = new PaymentView();
-        infoView = new InfoView();
+        courseView       = new CourseView();
+        enrollmentView   = new EnrollmentView();
+        paymentView      = new PaymentView();
+        infoView         = new InfoView();
 
-        JScrollPane regScroll = createScrollPane(registrationView);
+        JScrollPane dashScroll   = createScrollPane(dashboardView);
+        JScrollPane regScroll    = createScrollPane(registrationView);
         JScrollPane courseScroll = createScrollPane(courseView);
         JScrollPane enrollScroll = createScrollPane(enrollmentView);
         JScrollPane paymentScroll = createScrollPane(paymentView);
-        JScrollPane infoScroll = createScrollPane(infoView);
+        JScrollPane infoScroll   = createScrollPane(infoView);
 
+        tabs.addTab("  Dashboard  ", dashScroll);
         tabs.addTab("  Student Registration  ", regScroll);
         tabs.addTab("  Course Management  ", courseScroll);
         tabs.addTab("  Enrollment  ", enrollScroll);
@@ -92,10 +96,12 @@ public class MainView extends JFrame {
 
         tabs.addChangeListener((ChangeEvent e) -> {
             int idx = tabs.getSelectedIndex();
-            if (idx == 2) {
+            if (idx == 0) {
+                dashboardView.refresh();
+            } else if (idx == 3) {
                 enrollmentView.loadComboBoxes();
                 enrollmentView.loadEnrollments();
-            } else if (idx == 3) {
+            } else if (idx == 4) {
                 paymentView.loadStudentCombo();
                 paymentView.loadStudentEnrollments();
                 paymentView.loadPaymentHistory();

@@ -37,7 +37,7 @@ public class PaymentDAOImpl implements PaymentDAO {
 
     @Override
     public Payment get(int paymentId) throws Exception {
-        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name " +
+        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name, e.student_id AS sid " +
                      "FROM payments p " +
                      "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
                      "JOIN students s ON e.student_id = s.student_id " +
@@ -56,7 +56,7 @@ public class PaymentDAOImpl implements PaymentDAO {
     @Override
     public List<Payment> getAll() throws Exception {
         List<Payment> list = new ArrayList<>();
-        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name " +
+        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name, e.student_id AS sid " +
                      "FROM payments p " +
                      "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
                      "JOIN students s ON e.student_id = s.student_id " +
@@ -73,7 +73,7 @@ public class PaymentDAOImpl implements PaymentDAO {
     @Override
     public List<Payment> getByEnrollment(int enrollmentId) throws Exception {
         List<Payment> list = new ArrayList<>();
-        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name " +
+        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name, e.student_id AS sid " +
                      "FROM payments p " +
                      "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
                      "JOIN students s ON e.student_id = s.student_id " +
@@ -92,7 +92,7 @@ public class PaymentDAOImpl implements PaymentDAO {
     @Override
     public List<Payment> search(String keyword) throws Exception {
         List<Payment> list = new ArrayList<>();
-        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name " +
+        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name, e.student_id AS sid " +
                      "FROM payments p " +
                      "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
                      "JOIN students s ON e.student_id = s.student_id " +
@@ -129,7 +129,7 @@ public class PaymentDAOImpl implements PaymentDAO {
     @Override
     public List<Payment> getByStudentId(String studentId) throws Exception {
         List<Payment> list = new ArrayList<>();
-        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name " +
+        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name, e.student_id AS sid " +
                      "FROM payments p " +
                      "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
                      "JOIN students s ON e.student_id = s.student_id " +
@@ -158,7 +158,7 @@ public class PaymentDAOImpl implements PaymentDAO {
     @Override
     public List<Payment> getByReference(String referenceNumber) throws Exception {
         List<Payment> list = new ArrayList<>();
-        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name " +
+        String sql = "SELECT p.*, s.first_name, s.last_name, c.course_name, e.student_id AS sid " +
                      "FROM payments p " +
                      "JOIN enrollments e ON p.enrollment_id = e.enrollment_id " +
                      "JOIN students s ON e.student_id = s.student_id " +
@@ -185,6 +185,7 @@ public class PaymentDAOImpl implements PaymentDAO {
         if (d != null) p.setPaymentDate(d.toLocalDate());
         p.setStudentName(rs.getString("first_name") + " " + rs.getString("last_name"));
         p.setCourseName(rs.getString("course_name"));
+        try { p.setStudentId(rs.getString("sid")); } catch (SQLException ignored) {}
         return p;
     }
 }

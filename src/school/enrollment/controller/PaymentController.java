@@ -1,9 +1,8 @@
 package school.enrollment.controller;
 
-import java.awt.*;
 import java.util.List;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.JOptionPane;
+import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import school.enrollment.dao.PaymentDAO;
 import school.enrollment.daoimpl.PaymentDAOImpl;
@@ -47,88 +46,19 @@ public class PaymentController {
         }
     }
 
-    public String processPayments(List<double[]> enrollmentPayments, String paymentMethod, String referenceNumber) {
-        StringBuilder result = new StringBuilder();
-        for (double[] ep : enrollmentPayments) {
-            int enrollmentId = (int) ep[0];
-            double amount = ep[1];
-            try {
-                Payment p = new Payment();
-                p.setEnrollmentId(enrollmentId);
-                p.setAmount(amount);
-                p.setPaymentMethod(paymentMethod.trim());
-                p.setReferenceNumber(referenceNumber.trim());
-                paymentDAO.insert(p);
-                result.append("  P").append(String.format("%.2f", amount)).append(" - OK\n");
-            } catch (Exception e) {
-                result.append("  Enroll #").append(enrollmentId).append(": ").append(e.getMessage()).append("\n");
-            }
-        }
-        return result.toString();
-    }
-
     public void deletePayment(int paymentId) {
-        if (paymentId <= 0) return;
+        if (paymentId <= 0) {
+            JOptionPane.showMessageDialog(null, "Please select a payment to delete.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int confirm = JOptionPane.showConfirmDialog(null, "Delete this payment record?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) return;
         try {
             paymentDAO.delete(paymentId);
-            JOptionPane.showMessageDialog(null, "Payment record deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Payment deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error deleting payment: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    public void deletePaymentsByReference(String referenceNumber) {
-        try {
-            List<Payment> payments = paymentDAO.getByReference(referenceNumber);
-            if (payments.isEmpty()) {
-                JOptionPane.showMessageDialog(null, "No payments found with that reference number.", "Not Found", JOptionPane.INFORMATION_MESSAGE);
-                return;
-            }
-            paymentDAO.deleteByReference(referenceNumber);
-            JOptionPane.showMessageDialog(null, payments.size() + " payment record(s) deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error deleting payments: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    public int deletePaymentWithConfirmation(JComponent parent, int row, String studentName, String amount, String method, String ref) {
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        panel.add(new JLabel("<html><b>Delete Payment Record</b><br>Type the reference number and type \"confirm\" to delete.</html>"), gbc);
-
-        gbc.gridy = 1; gbc.gridwidth = 1;
-        panel.add(new JLabel("Reference #:"), gbc);
-        gbc.gridx = 1;
-        JTextField txtRef = new JTextField(15);
-        panel.add(txtRef, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Type \"confirm\":"), gbc);
-        gbc.gridx = 1;
-        JTextField txtConfirm = new JTextField(15);
-        panel.add(txtConfirm, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
-        panel.add(new JLabel("Record: " + studentName + ", P" + amount + " (" + method + ")", SwingConstants.CENTER), gbc);
-
-        int option = JOptionPane.showConfirmDialog(parent, panel, "Confirm Deletion", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (option != JOptionPane.OK_OPTION) return -1;
-
-        String enteredRef = txtRef.getText().trim();
-        String enteredConfirm = txtConfirm.getText().trim();
-        if (!enteredRef.equals(ref.trim())) {
-            JOptionPane.showMessageDialog(parent, "Reference number does not match. Deletion cancelled.", "Mismatch", JOptionPane.ERROR_MESSAGE);
-            return -1;
-        }
-        if (!enteredConfirm.equalsIgnoreCase("confirm")) {
-            JOptionPane.showMessageDialog(parent, "Please type \"confirm\" to proceed with deletion.", "Confirmation Required", JOptionPane.ERROR_MESSAGE);
-            return -1;
-        }
-        return row;
     }
 
     public List<Payment> aggregatePayments(List<Payment> payments) {
@@ -142,6 +72,7 @@ public class PaymentController {
                 Payment clone = new Payment();
                 clone.setPaymentId(p.getPaymentId());
                 clone.setEnrollmentId(p.getEnrollmentId());
+                clone.setStudentId(p.getStudentId());
                 clone.setStudentName(p.getStudentName());
                 clone.setReferenceNumber(p.getReferenceNumber());
                 clone.setPaymentMethod(p.getPaymentMethod());
@@ -160,6 +91,7 @@ public class PaymentController {
             List<Payment> aggregated = aggregatePayments(paymentDAO.getAll());
             for (Payment p : aggregated) {
                 model.addRow(new Object[]{
+                    p.getStudentId(),
                     p.getStudentName(),
                     String.format("%.2f", p.getAmount()),
                     p.getPaymentMethod(),
@@ -188,6 +120,7 @@ public class PaymentController {
             List<Payment> aggregated = aggregatePayments(list);
             for (Payment p : aggregated) {
                 model.addRow(new Object[]{
+                    p.getStudentId(),
                     p.getStudentName(),
                     String.format("%.2f", p.getAmount()),
                     p.getPaymentMethod(),

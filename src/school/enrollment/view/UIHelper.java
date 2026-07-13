@@ -69,7 +69,7 @@ public class UIHelper {
 
         DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) table.getTableHeader().getDefaultRenderer();
         headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-        headerRenderer.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        headerRenderer.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
 
         final int[] hoverRow = new int[]{-1};
         table.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
@@ -101,7 +101,7 @@ public class UIHelper {
             }
         };
         leftRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-        leftRenderer.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        leftRenderer.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
         table.setDefaultRenderer(Object.class, leftRenderer);
         table.setDefaultRenderer(String.class, leftRenderer);
 
@@ -110,7 +110,7 @@ public class UIHelper {
             {
                 checkbox.setHorizontalAlignment(SwingConstants.LEFT);
                 checkbox.setOpaque(true);
-                checkbox.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+                checkbox.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
             }
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {

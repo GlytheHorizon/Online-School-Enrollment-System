@@ -1,5 +1,6 @@
 src\school\enrollment\Main.java
 src\school\enrollment\controller\CourseController.java
+src\school\enrollment\controller\DashboardController.java
 src\school\enrollment\controller\EnrollmentController.java
 src\school\enrollment\controller\PaymentController.java
 src\school\enrollment\controller\StudentController.java
@@ -21,6 +22,7 @@ src\school\enrollment\model\Payment.java
 src\school\enrollment\model\Student.java
 src\school\enrollment\theme\AppTheme.java
 src\school\enrollment\view\CourseView.java
+src\school\enrollment\view\DashboardView.java
 src\school\enrollment\view\EnrollmentView.java
 src\school\enrollment\view\InfoView.java
 src\school\enrollment\view\MainView.java

@@ -135,7 +135,7 @@ public class EnrollmentView extends JPanel {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         UIHelper.stylePanel(buttons);
         JButton btnEnroll = UIHelper.createButton("Enroll", UIHelper.SUCCESS);
-        JButton btnRefresh = UIHelper.createOutlineButton("Refresh Lists", UIHelper.ACCENT);
+        JButton btnRefresh = UIHelper.createGhostButton("Refresh Lists");
 
         btnEnroll.addActionListener(e -> {
             Student s = (Student) cmbStudent.getSelectedItem();
