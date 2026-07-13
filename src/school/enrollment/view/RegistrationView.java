@@ -1,8 +1,6 @@
 package school.enrollment.view;
 
 import java.awt.*;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
@@ -163,22 +161,32 @@ public class RegistrationView extends JPanel {
                 }
                 return sb.toString();
             }
+            private boolean isPlaceholder(String text) {
+                String ph = (String) txtBirthDate.getClientProperty("placeholder");
+                return ph != null && ph.equals(text);
+            }
             public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
-                String ns = (cur.substring(0, offs) + str + cur.substring(offs)).replaceAll("[^\\d]", "");
+                String full = cur.substring(0, offs) + str + cur.substring(offs);
+                if (isPlaceholder(full)) { fb.replace(0, cur.length(), full, a); return; }
+                String ns = full.replaceAll("[^\\d]", "");
                 if (ns.length() > 8) return;
                 fb.replace(0, cur.length(), fmt(ns), a);
             }
             public void replace(FilterBypass fb, int offs, int len, String str, AttributeSet a) throws BadLocationException {
                 if (str == null) { fb.replace(offs, len, null, a); return; }
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
-                String ns = (cur.substring(0, offs) + str + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                String full = cur.substring(0, offs) + str + cur.substring(offs + len);
+                if (isPlaceholder(full)) { fb.replace(0, cur.length(), full, a); return; }
+                String ns = full.replaceAll("[^\\d]", "");
                 if (ns.length() > 8) return;
                 fb.replace(0, cur.length(), fmt(ns), a);
             }
             public void remove(FilterBypass fb, int offs, int len) throws BadLocationException {
                 String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
-                String ns = (cur.substring(0, offs) + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                String full = cur.substring(0, offs) + cur.substring(offs + len);
+                if (isPlaceholder(full)) { fb.replace(0, cur.length(), full, null); return; }
+                String ns = full.replaceAll("[^\\d]", "");
                 fb.replace(0, cur.length(), fmt(ns), null);
             }
         });
@@ -188,13 +196,7 @@ public class RegistrationView extends JPanel {
         UIHelper.setPlaceholder(txtLastName,   "e.g., Dela Cruz");
         UIHelper.setPlaceholder(txtEmail,      "email@example.com");
         UIHelper.setPlaceholder(txtPhone,      "09XXXXXXXXX");
-        txtBirthDate.setForeground(Color.GRAY);
-        txtBirthDate.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) { txtBirthDate.setForeground(Color.BLACK); }
-            public void focusLost(FocusEvent e) {
-                txtBirthDate.setForeground(txtBirthDate.getText().isEmpty() ? Color.GRAY : Color.BLACK);
-            }
-        });
+        UIHelper.setPlaceholder(txtBirthDate, "MM/DD/YYYY");
         UIHelper.setPlaceholder(txtBirthPlace, "e.g., Manila");
         UIHelper.setPlaceholder(txtAddress,    "Street, City, Province");
         UIHelper.setComboPlaceholder(cmbCivilStatus, "Select Civil Status");
@@ -459,6 +461,14 @@ public class RegistrationView extends JPanel {
             UIHelper.styleComboBox(fCivilStatus);
             UIHelper.styleComboBox(fSex);
 
+            UIHelper.setPlaceholder(fFirstName,  "e.g., Juan");
+            UIHelper.setPlaceholder(fLastName,   "e.g., Dela Cruz");
+            UIHelper.setPlaceholder(fEmail,      "email@example.com");
+            UIHelper.setPlaceholder(fPhone,      "09XXXXXXXXX");
+            UIHelper.setPlaceholder(fBirthDate,  "MM/DD/YYYY");
+            UIHelper.setPlaceholder(fBirthPlace, "e.g., Manila");
+            UIHelper.setPlaceholder(fAddress,    "Street, City, Province");
+
             // fPhone: digits only, max 11
             ((PlainDocument) fPhone.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
                 public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
@@ -508,22 +518,32 @@ public class RegistrationView extends JPanel {
                     }
                     return sb.toString();
                 }
+                private boolean isPlaceholder(String text) {
+                    String ph = (String) fBirthDate.getClientProperty("placeholder");
+                    return ph != null && ph.equals(text);
+                }
                 public void insertString(FilterBypass fb, int offs, String str, AttributeSet a) throws BadLocationException {
                     String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
-                    String ns = (cur.substring(0, offs) + str + cur.substring(offs)).replaceAll("[^\\d]", "");
+                    String full = cur.substring(0, offs) + str + cur.substring(offs);
+                    if (isPlaceholder(full)) { fb.replace(0, cur.length(), full, a); return; }
+                    String ns = full.replaceAll("[^\\d]", "");
                     if (ns.length() > 8) return;
                     fb.replace(0, cur.length(), fmt(ns), a);
                 }
                 public void replace(FilterBypass fb, int offs, int len, String str, AttributeSet a) throws BadLocationException {
                     if (str == null) { fb.replace(offs, len, null, a); return; }
                     String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
-                    String ns = (cur.substring(0, offs) + str + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                    String full = cur.substring(0, offs) + str + cur.substring(offs + len);
+                    if (isPlaceholder(full)) { fb.replace(0, cur.length(), full, a); return; }
+                    String ns = full.replaceAll("[^\\d]", "");
                     if (ns.length() > 8) return;
                     fb.replace(0, cur.length(), fmt(ns), a);
                 }
                 public void remove(FilterBypass fb, int offs, int len) throws BadLocationException {
                     String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
-                    String ns = (cur.substring(0, offs) + cur.substring(offs + len)).replaceAll("[^\\d]", "");
+                    String full = cur.substring(0, offs) + cur.substring(offs + len);
+                    if (isPlaceholder(full)) { fb.replace(0, cur.length(), full, null); return; }
+                    String ns = full.replaceAll("[^\\d]", "");
                     fb.replace(0, cur.length(), fmt(ns), null);
                 }
             });
@@ -598,12 +618,21 @@ public class RegistrationView extends JPanel {
                 dispose();
             });
 
-            btnEdit.addActionListener(e -> setEditMode(true));
+            btnEdit.addActionListener(e -> {
+                int r = JOptionPane.showConfirmDialog(StudentDetailsDialog.this,
+                    "Are you sure you want to edit this student?",
+                    "Confirm Edit", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                if (r == JOptionPane.YES_OPTION) setEditMode(true);
+            });
             btnDelete.addActionListener(e -> {
                 controller.deactivateStudent(student.getStudentId());
                 dispose();
             });
             btnSave.addActionListener(e -> {
+                int r = JOptionPane.showConfirmDialog(StudentDetailsDialog.this,
+                    "Are you sure you want to save changes?",
+                    "Confirm Save", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                if (r != JOptionPane.YES_OPTION) return;
                 LocalDate bd = parseBirthDate(UIHelper.getCleanText(fBirthDate));
                 String rawBD = UIHelper.getCleanText(fBirthDate);
                 if (!rawBD.isEmpty() && bd == null) return;
@@ -727,7 +756,14 @@ public class RegistrationView extends JPanel {
             // When entering edit mode, clear N/A placeholders so the user types real data
             if (editable) {
                 for (JTextField f : new JTextField[]{fFirstName, fLastName, fEmail, fPhone, fBirthDate, fBirthPlace, fAddress}) {
-                    if ("N/A".equals(f.getText())) f.setText("");
+                    if ("N/A".equals(f.getText())) {
+                        f.setText("");
+                    }
+                    String ph = (String) f.getClientProperty("placeholder");
+                    if (ph != null && f.getText().isEmpty()) {
+                        f.setText(ph);
+                        f.setForeground(Color.GRAY);
+                    }
                 }
             }
             btnEdit.setVisible(!editable);
